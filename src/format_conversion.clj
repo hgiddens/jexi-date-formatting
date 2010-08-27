@@ -32,6 +32,12 @@
 (def month-name
      (constant-semantics (factor= 4 (lit \m)) :mmmm))
 
+(def two-digit-year
+     (constant-semantics (factor= 2 (lit \y)) :yy))
+
+(def four-digit-year
+     (constant-semantics (factor= 4 (lit \y)) :yyyy))
+
 (defn format-pattern [token]
   (condp = token
       :d "d"
@@ -44,7 +50,10 @@
       :m "M"
       :mm "MM"
       :mmm "MMM"
-      :mmmm "MMMM"))
+      :mmmm "MMMM"
+
+      :yy "YY"
+      :yyyy "YYYY"))
 
 (defn format-from-date-format [date-format]
   (let [parser (rep* (alt locale-long-date-format
@@ -57,6 +66,9 @@
                           month-name
                           abbreviated-month-name
                           month-number-with-leading-zero
-                          month-number-without-leading-zero))
+                          month-number-without-leading-zero
+
+                          four-digit-year
+                          two-digit-year))
         result (first (parser {:remainder date-format}))]
     (DateTimeFormat/forPattern (apply str (map format-pattern result)))))

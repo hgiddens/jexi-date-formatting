@@ -17,7 +17,10 @@
        month-number-without-leading-zero "mrest" :m "rest"
        month-number-with-leading-zero "mmrest" :mm "rest"
        abbreviated-month-name "mmmrest" :mmm "rest"
-       month-name "mmmmrest" :mmmm "rest"))
+       month-name "mmmmrest" :mmmm "rest"
+
+       two-digit-year "yyrest" :yy "rest"
+       four-digit-year "yyyyrest" :yyyy "rest"))
 
 (deftest to-format-pattern-tests
   (are [token expected-pattern] (= expected-pattern (format-pattern token))
@@ -31,7 +34,10 @@
        :m "M"
        :mm "MM"
        :mmm "MMM"
-       :mmmm "MMMM"))
+       :mmmm "MMMM"
+
+       :yy "YY"
+       :yyyy "YYYY"))
 
 (deftest basic-conversion-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -48,4 +54,7 @@
          "8" "m"
          "08" "mm"
          "Aug" "mmm"
-         "August" "mmmm")))
+         "August" "mmmm"
+
+         "10" "yy"
+         "2010" "yyyy")))
