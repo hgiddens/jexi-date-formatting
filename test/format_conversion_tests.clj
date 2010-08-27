@@ -32,6 +32,10 @@
        seconds-without-leading-zero "srest" :s "rest"
        seconds-with-leading-zero "ssrest" :ss "rest"))
 
+(deftest date-format-parsing-tests
+  (are [expected actual] (= expected (parse-date-format actual))
+       [:dd :mm :yy] "ddmmyy"))
+
 (deftest to-format-pattern-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
@@ -63,31 +67,7 @@
          :s "5"
          :ss "05")))
 
-(deftest basic-conversion-tests
+(deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
-    (are [x y] (= x (time-format/unparse (format-from-date-format y) test-date))
-         "2" "d"
-         "02" "dd"
-         "Mon" "ddd"
-         "Monday" "dddd"
-         "02/08/2010" "ddddd"
-         "Monday, 2 August 2010" "dddddd"
-         "Monday, 2 August 201002" "dddddddd"
-
-         "8" "m"
-         "08" "mm"
-         "Aug" "mmm"
-         "August" "mmmm"
-
-         "10" "yy"
-         "2010" "yyyy"
-
-         "9" "h"
-         "09" "hh"
-
-         "1" "n"
-         "01" "nn"
-
-         "5" "s"
-         "05" "ss")))
+    (is (= "20100802" (time-format/unparse (create-formatter [:yyyy :mm :dd]) test-date)))))

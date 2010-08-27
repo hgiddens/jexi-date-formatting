@@ -95,7 +95,9 @@
       :s #(.appendSecondOfMinute % 1)
       :ss #(.appendSecondOfMinute % 2)))
 
-(defn format-from-date-format [date-format]
+(defn parse-date-format
+  "Converts the string date-format to a list of date format tokens."
+  [date-format]
   (let [parser (rep* (alt locale-long-date-format
                           locale-short-date-format
                           day-of-week
@@ -118,10 +120,15 @@
                           minutes-without-leading-zero
 
                           seconds-with-leading-zero
-                          seconds-without-leading-zero))
-        result (first (parser {:remainder date-format}))]
-    (.toFormatter (reduce (fn [builder action]
-                            (doto builder
-                              action))
-                          (new DateTimeFormatterBuilder)
-                          (map format-pattern result)))))
+                          seconds-without-leading-zero))]
+    (first (parser {:remainder date-format}))))
+
+(defn create-formatter
+  "Creates a DateTimeFormatter with a format as described by tokens."
+  [tokens]
+  (.toFormatter (reduce (fn [builder action]
+                          (doto builder
+                            action))
+                        (new DateTimeFormatterBuilder)
+                        (map format-pattern tokens))))
+
