@@ -12,7 +12,12 @@
        abbreviated-day-of-week "dddrest" :ddd "rest"
        day-of-week "ddddrest" :dddd "rest"
        locale-short-date-format "dddddrest" :ddddd "rest"
-       locale-long-date-format "ddddddrest" :dddddd "rest"))
+       locale-long-date-format "ddddddrest" :dddddd "rest"
+
+       month-number-without-leading-zero "mrest" :m "rest"
+       month-number-with-leading-zero "mmrest" :mm "rest"
+       abbreviated-month-name "mmmrest" :mmm "rest"
+       month-name "mmmmrest" :mmmm "rest"))
 
 (deftest to-format-pattern-tests
   (are [token expected-pattern] (= expected-pattern (format-pattern token))
@@ -21,7 +26,12 @@
        :ddd "EEE"
        :dddd "EEEE"
        :ddddd "dd/MM/YYYY"
-       :dddddd "EEEE, d MMMM YYYY"))
+       :dddddd "EEEE, d MMMM YYYY"
+
+       :m "M"
+       :mm "MM"
+       :mmm "MMM"
+       :mmmm "MMMM"))
 
 (deftest basic-conversion-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -33,4 +43,9 @@
          "Monday" "dddd"
          "02/08/2010" "ddddd"
          "Monday, 2 August 2010" "dddddd"
-         "Monday, 2 August 201002" "dddddddd")))
+         "Monday, 2 August 201002" "dddddddd"
+
+         "8" "m"
+         "08" "mm"
+         "Aug" "mmm"
+         "August" "mmmm")))
