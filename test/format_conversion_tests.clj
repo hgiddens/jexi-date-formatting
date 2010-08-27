@@ -33,8 +33,20 @@
        seconds-with-leading-zero "ssrest" :ss "rest"))
 
 (deftest date-format-parsing-tests
-  (are [expected actual] (= expected (parse-date-format actual))
-       [:dd :mm :yy] "ddmmyy"))
+  (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
+  (testing "precedence is correct for potentially ambiguous parses"
+    (are [expected actual] (= expected (parse-date-format actual))
+         [:dddddd] "dddddd"
+         [:ddddd] "ddddd"
+         [:dddd] "dddd"
+         [:ddd] "ddd"
+         [:dd] "dd"
+         [:mmmm] "mmmm"
+         [:mmm] "mmm"
+         [:mm] "mm"
+         [:yyyy] "yyyy"
+         [:nn] "nn"
+         [:ss] "ss")))
 
 (deftest builder-updater-for-token-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
