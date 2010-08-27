@@ -1,4 +1,5 @@
 (ns format-conversion-tests
+  (:import [org.joda.time.format DateTimeFormatterBuilder])
   (:require [clj-time.core :as time]
             [clj-time.format :as time-format])
   (:use clojure.test format-conversion))
@@ -32,30 +33,35 @@
        seconds-with-leading-zero "ssrest" :ss "rest"))
 
 (deftest to-format-pattern-tests
-  (are [token expected-pattern] (= expected-pattern (format-pattern token))
-       :d "d"
-       :dd "dd"
-       :ddd "EEE"
-       :dddd "EEEE"
-       :ddddd "dd/MM/YYYY"
-       :dddddd "EEEE, d MMMM YYYY"
+  (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
+                                       (time/time-zone-for-id "Pacific/Auckland"))]
+    (are [token expected-pattern] (let [builder (new DateTimeFormatterBuilder)]
+                                    ((format-pattern token) builder)
+                                    (let [result (time-format/unparse (.toFormatter builder) test-date)]
+                                      (= expected-pattern result)))
+         :d "2"
+         :dd "02"
+         :ddd "Mon"
+         :dddd "Monday"
+         :ddddd "02/08/2010"
+         :dddddd "Monday, 2 August 2010"
 
-       :m "M"
-       :mm "MM"
-       :mmm "MMM"
-       :mmmm "MMMM"
+         :m "8"
+         :mm "08"
+         :mmm "Aug"
+         :mmmm "August"
 
-       :yy "YY"
-       :yyyy "YYYY"
+         :yy "10"
+         :yyyy "2010"
 
-       :h "H"
-       :hh "HH"
+         :h "9"
+         :hh "09"
 
-       :n "m"
-       :nn "mm"
+         :n "1"
+         :nn "01"
 
-       :s "s"
-       :ss "ss"))
+         :s "5"
+         :ss "05")))
 
 (deftest basic-conversion-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)

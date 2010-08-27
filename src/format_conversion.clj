@@ -1,5 +1,6 @@
 (ns format-conversion
-  (:import [org.joda.time.format DateTimeFormat])
+  (:import [org.joda.time.format DateTimeFormatterBuilder])
+  (:require [clj-time.core :as time])
   (:use name.choi.joshua.fnparse))
 
 (def day-number-without-leading-zero
@@ -58,29 +59,41 @@
 
 (defn format-pattern [token]
   (condp = token
-      :d "d"
-      :dd "dd"
-      :ddd "EEE"
-      :dddd "EEEE"
-      :ddddd "dd/MM/YYYY"
-      :dddddd "EEEE, d MMMM YYYY"
+      :d #(.appendDayOfMonth % 1)
+      :dd #(.appendDayOfMonth % 2)
+      :ddd #(.appendDayOfWeekShortText %)
+      :dddd #(.appendDayOfWeekText %)
+      :ddddd #(doto %
+                (.appendDayOfMonth 2)
+                (.appendLiteral "/")
+                (.appendMonthOfYear 2)
+                (.appendLiteral "/")
+                (.appendYear 4 4))
+      :dddddd #(doto %
+                 (.appendDayOfWeekText)
+                 (.appendLiteral ", ")
+                 (.appendDayOfMonth 1)
+                 (.appendLiteral " ")
+                 (.appendMonthOfYearText)
+                 (.appendLiteral " ")
+                 (.appendYear 4 4))
 
-      :m "M"
-      :mm "MM"
-      :mmm "MMM"
-      :mmmm "MMMM"
+      :m #(.appendMonthOfYear % 1)
+      :mm #(.appendMonthOfYear % 2)
+      :mmm #(.appendMonthOfYearShortText %)
+      :mmmm #(.appendMonthOfYearText %)
 
-      :yy "YY"
-      :yyyy "YYYY"
+      :yy #(.appendTwoDigitYear % (- (time/year (time/now)) 30) false)
+      :yyyy #(.appendYear % 4 4)
 
-      :h "H"
-      :hh "HH"
+      :h #(.appendHourOfDay % 1)
+      :hh #(.appendHourOfDay % 2)
 
-      :n "m"
-      :nn "mm"
+      :n #(.appendMinuteOfHour % 1)
+      :nn #(.appendMinuteOfHour % 2)
 
-      :s "s"
-      :ss "ss"))
+      :s #(.appendSecondOfMinute % 1)
+      :ss #(.appendSecondOfMinute % 2)))
 
 (defn format-from-date-format [date-format]
   (let [parser (rep* (alt locale-long-date-format
@@ -107,4 +120,8 @@
                           seconds-with-leading-zero
                           seconds-without-leading-zero))
         result (first (parser {:remainder date-format}))]
-    (DateTimeFormat/forPattern (apply str (map format-pattern result)))))
+    (.toFormatter (reduce (fn [builder action]
+                            (doto builder
+                              action))
+                          (new DateTimeFormatterBuilder)
+                          (map format-pattern result)))))
