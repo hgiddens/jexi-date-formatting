@@ -50,6 +50,12 @@
 (def minutes-with-leading-zero
      (constant-semantics (factor= 2 (lit \n)) :nn))
 
+(def seconds-without-leading-zero
+     (constant-semantics (lit \s) :s))
+
+(def seconds-with-leading-zero
+     (constant-semantics (factor= 2 (lit \s)) :ss))
+
 (defn format-pattern [token]
   (condp = token
       :d "d"
@@ -71,7 +77,10 @@
       :hh "HH"
 
       :n "m"
-      :nn "mm"))
+      :nn "mm"
+
+      :s "s"
+      :ss "ss"))
 
 (defn format-from-date-format [date-format]
   (let [parser (rep* (alt locale-long-date-format
@@ -93,6 +102,9 @@
                           hour-number-without-leading-zero
 
                           minutes-with-leading-zero
-                          minutes-without-leading-zero))
+                          minutes-without-leading-zero
+
+                          seconds-with-leading-zero
+                          seconds-without-leading-zero))
         result (first (parser {:remainder date-format}))]
     (DateTimeFormat/forPattern (apply str (map format-pattern result)))))

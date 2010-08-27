@@ -26,7 +26,10 @@
        hour-number-with-leading-zero "hhrest" :hh "rest"
 
        minutes-without-leading-zero "nrest" :n "rest"
-       minutes-with-leading-zero "nnrest" :nn "rest"))
+       minutes-with-leading-zero "nnrest" :nn "rest"
+
+       seconds-without-leading-zero "srest" :s "rest"
+       seconds-with-leading-zero "ssrest" :ss "rest"))
 
 (deftest to-format-pattern-tests
   (are [token expected-pattern] (= expected-pattern (format-pattern token))
@@ -49,7 +52,10 @@
        :hh "HH"
 
        :n "m"
-       :nn "mm"))
+       :nn "mm"
+
+       :s "s"
+       :ss "ss"))
 
 (deftest basic-conversion-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -75,4 +81,7 @@
          "09" "hh"
 
          "1" "n"
-         "01" "nn")))
+         "01" "nn"
+
+         "5" "s"
+         "05" "ss")))
