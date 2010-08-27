@@ -32,4 +32,5 @@
          "Mon" "ddd"
          "Monday" "dddd"
          "02/08/2010" "ddddd"
-         "Monday, 2 August 2010" "dddddd")))
+         "Monday, 2 August 2010" "dddddd"
+         "Monday, 2 August 201002" "dddddddd")))
