@@ -57,7 +57,9 @@
 (def seconds-with-leading-zero
      (constant-semantics (factor= 2 (lit \s)) :ss))
 
-(defn format-pattern [token]
+(defn builder-updater-for-token
+  "Converts a format token to a function that updates a DateTimeFormatterBuilder."
+  [token]
   (condp = token
       :d #(.appendDayOfMonth % 1)
       :dd #(.appendDayOfMonth % 2)
@@ -130,5 +132,4 @@
                           (doto builder
                             action))
                         (new DateTimeFormatterBuilder)
-                        (map format-pattern tokens))))
-
+                        (map builder-updater-for-token tokens))))

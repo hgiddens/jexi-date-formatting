@@ -36,11 +36,11 @@
   (are [expected actual] (= expected (parse-date-format actual))
        [:dd :mm :yy] "ddmmyy"))
 
-(deftest to-format-pattern-tests
+(deftest builder-updater-for-token-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
     (are [token expected-pattern] (let [builder (new DateTimeFormatterBuilder)]
-                                    ((format-pattern token) builder)
+                                    ((builder-updater-for-token token) builder)
                                     (let [result (time-format/unparse (.toFormatter builder) test-date)]
                                       (= expected-pattern result)))
          :d "2"
