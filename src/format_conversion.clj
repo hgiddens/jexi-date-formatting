@@ -44,6 +44,12 @@
 (def hour-number-with-leading-zero
      (constant-semantics (factor= 2 (lit \h)) :hh))
 
+(def minutes-without-leading-zero
+     (constant-semantics (lit \n) :n))
+
+(def minutes-with-leading-zero
+     (constant-semantics (factor= 2 (lit \n)) :nn))
+
 (defn format-pattern [token]
   (condp = token
       :d "d"
@@ -62,7 +68,10 @@
       :yyyy "YYYY"
 
       :h "H"
-      :hh "HH"))
+      :hh "HH"
+
+      :n "m"
+      :nn "mm"))
 
 (defn format-from-date-format [date-format]
   (let [parser (rep* (alt locale-long-date-format
@@ -81,6 +90,9 @@
                           two-digit-year
 
                           hour-number-with-leading-zero
-                          hour-number-without-leading-zero))
+                          hour-number-without-leading-zero
+
+                          minutes-with-leading-zero
+                          minutes-without-leading-zero))
         result (first (parser {:remainder date-format}))]
     (DateTimeFormat/forPattern (apply str (map format-pattern result)))))
