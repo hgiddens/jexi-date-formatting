@@ -3,59 +3,29 @@
   (:require [clj-time.core :as time])
   (:use name.choi.joshua.fnparse))
 
-(def day-number-without-leading-zero
-     (constant-semantics (lit \d) :d))
+(def day-number-without-leading-zero (constant-semantics (lit \d) :d))
+(def day-number-with-leading-zero (constant-semantics (factor= 2 (lit \d)) :dd))
+(def abbreviated-day-of-week (constant-semantics (factor= 3 (lit \d)) :ddd))
+(def day-of-week (constant-semantics (factor= 4 (lit \d)) :dddd))
+(def locale-short-date-format (constant-semantics (factor= 5 (lit \d)) :ddddd))
+(def locale-long-date-format (constant-semantics (factor= 6 (lit \d)) :dddddd))
 
-(def day-number-with-leading-zero
-     (constant-semantics (factor= 2 (lit \d)) :dd))
+(def month-number-without-leading-zero (constant-semantics (lit \m) :m))
+(def month-number-with-leading-zero (constant-semantics (factor= 2 (lit \m)) :mm))
+(def abbreviated-month-name (constant-semantics (factor= 3 (lit \m)) :mmm))
+(def month-name (constant-semantics (factor= 4 (lit \m)) :mmmm))
 
-(def abbreviated-day-of-week
-     (constant-semantics (factor= 3 (lit \d)) :ddd))
+(def two-digit-year (constant-semantics (factor= 2 (lit \y)) :yy))
+(def four-digit-year (constant-semantics (factor= 4 (lit \y)) :yyyy))
 
-(def day-of-week
-     (constant-semantics (factor= 4 (lit \d)) :dddd))
+(def hour-number-without-leading-zero (constant-semantics (lit \h) :h))
+(def hour-number-with-leading-zero (constant-semantics (factor= 2 (lit \h)) :hh))
 
-(def locale-short-date-format
-     (constant-semantics (factor= 5 (lit \d)) :ddddd))
+(def minutes-without-leading-zero (constant-semantics (lit \n) :n))
+(def minutes-with-leading-zero (constant-semantics (factor= 2 (lit \n)) :nn))
 
-(def locale-long-date-format
-     (constant-semantics (factor= 6 (lit \d)) :dddddd))
-
-(def month-number-without-leading-zero
-     (constant-semantics (lit \m) :m))
-
-(def month-number-with-leading-zero
-     (constant-semantics (factor= 2 (lit \m)) :mm))
-
-(def abbreviated-month-name
-     (constant-semantics (factor= 3 (lit \m)) :mmm))
-
-(def month-name
-     (constant-semantics (factor= 4 (lit \m)) :mmmm))
-
-(def two-digit-year
-     (constant-semantics (factor= 2 (lit \y)) :yy))
-
-(def four-digit-year
-     (constant-semantics (factor= 4 (lit \y)) :yyyy))
-
-(def hour-number-without-leading-zero
-     (constant-semantics (lit \h) :h))
-
-(def hour-number-with-leading-zero
-     (constant-semantics (factor= 2 (lit \h)) :hh))
-
-(def minutes-without-leading-zero
-     (constant-semantics (lit \n) :n))
-
-(def minutes-with-leading-zero
-     (constant-semantics (factor= 2 (lit \n)) :nn))
-
-(def seconds-without-leading-zero
-     (constant-semantics (lit \s) :s))
-
-(def seconds-with-leading-zero
-     (constant-semantics (factor= 2 (lit \s)) :ss))
+(def seconds-without-leading-zero (constant-semantics (lit \s) :s))
+(def seconds-with-leading-zero (constant-semantics (factor= 2 (lit \s)) :ss))
 
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
