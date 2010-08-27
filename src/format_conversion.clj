@@ -27,6 +27,9 @@
 (def seconds-without-leading-zero (constant-semantics (lit \s) :s))
 (def seconds-with-leading-zero (constant-semantics (factor= 2 (lit \s)) :ss))
 
+(def milliseconds-unpadded (constant-semantics (lit \z) :z))
+(def milliseconds-padded (constant-semantics (factor= 3 (lit \z)) :zzz))
+
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
   [token]
@@ -65,7 +68,10 @@
       :nn #(.appendMinuteOfHour % 2)
 
       :s #(.appendSecondOfMinute % 1)
-      :ss #(.appendSecondOfMinute % 2)))
+      :ss #(.appendSecondOfMinute % 2)
+
+      :z #(.appendMillisOfSecond % 1)
+      :zzz #(.appendMillisOfSecond % 3)))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
@@ -92,7 +98,10 @@
                           minutes-without-leading-zero
 
                           seconds-with-leading-zero
-                          seconds-without-leading-zero))]
+                          seconds-without-leading-zero
+
+                          milliseconds-padded
+                          milliseconds-unpadded))]
     (first (parser {:remainder date-format}))))
 
 (defn create-formatter

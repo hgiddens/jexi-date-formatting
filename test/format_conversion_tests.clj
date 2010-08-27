@@ -30,7 +30,10 @@
        minutes-with-leading-zero "nnrest" :nn "rest"
 
        seconds-without-leading-zero "srest" :s "rest"
-       seconds-with-leading-zero "ssrest" :ss "rest"))
+       seconds-with-leading-zero "ssrest" :ss "rest"
+
+       milliseconds-unpadded "zrest" :z "rest"
+       milliseconds-padded "zzzrest" :zzz "rest"))
 
 (deftest date-format-parsing-tests
   (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
@@ -46,7 +49,8 @@
          [:mm] "mm"
          [:yyyy] "yyyy"
          [:nn] "nn"
-         [:ss] "ss")))
+         [:ss] "ss"
+         [:zzz] "zzz")))
 
 (deftest builder-updater-for-token-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -77,7 +81,10 @@
          :nn "01"
 
          :s "5"
-         :ss "05")))
+         :ss "05"
+
+         :z "9"
+         :zzz "009")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
