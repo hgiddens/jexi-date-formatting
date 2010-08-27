@@ -14,15 +14,25 @@
 (def day-of-week
      (constant-semantics (factor= 4 (lit \d)) :dddd))
 
+(def locale-short-date-format
+     (constant-semantics (factor= 5 (lit \d)) :ddddd))
+
+(def locale-long-date-format
+     (constant-semantics (factor= 6 (lit \d)) :dddddd))
+
 (defn format-pattern [token]
   (condp = token
       :d "d"
       :dd "dd"
       :ddd "EEE"
-      :dddd "EEEE"))
+      :dddd "EEEE"
+      :ddddd "dd/MM/YYYY"
+      :dddddd "EEEE, d MMMM YYYY"))
 
 (defn format-from-date-format [date-format]
-  (let [parser (rep* (alt day-of-week
+  (let [parser (rep* (alt locale-long-date-format
+                          locale-short-date-format
+                          day-of-week
                           abbreviated-day-of-week
                           day-number-with-leading-zero
                           day-number-without-leading-zero))
