@@ -35,16 +35,21 @@
 (def locale-short-time-format (constant-semantics (lit \t) :t))
 (def locale-long-time-format (constant-semantics (factor= 2 (lit \t)) :tt))
 
+(def long-half-day-specifier (constant-semantics (lit-conc-seq "am/pm") :am/pm))
+(def short-half-day-specifier (constant-semantics (lit-conc-seq "a/p") :a/p))
+(def locale-half-day-specifier (constant-semantics (lit-conc-seq "ampm") :ampm))
+
 (defn custom-halfday-printer
-  "Creates a DateTimePrinter that prints the halfday as either 'a.m.' or 'p.m.'."
-  []
+  "Creates a DateTimePrinter that prints the halfday using the provided AM/PM strings."
+  [am-string pm-string]
   (let [get-half-day (fn [chronology time locale]
                        (let [field (.getField (DateTimeFieldType/halfdayOfDay) chronology)
                              default (.getAsText field time locale)]
-                         (assert (or (= default "AM") (= default "PM")))
-                         (apply str (interleave (lower-case default) (repeat \.)))))]
+                         (condp = default
+                             "AM" am-string
+                             "PM" pm-string)))]
     (proxy [DateTimePrinter] []
-      (estimatePrintedLength [] 4)
+      (estimatePrintedLength [] (max (count am-string) (count pm-string)))
       (printTo
        ([out partial locale]
           (.append out (get-half-day (.getChronology partial) partial locale)))
@@ -99,7 +104,7 @@
             (.appendLiteral ":")
             (.appendMinuteOfHour 2)
             (.appendLiteral " ")
-            (.append (custom-halfday-printer)))
+            (.append (custom-halfday-printer "a.m." "p.m.")))
       :tt #(doto %
              (.appendHourOfHalfday 1)
              (.appendLiteral ":")
@@ -107,7 +112,11 @@
              (.appendLiteral ":")
              (.appendSecondOfMinute 2)
              (.appendLiteral " ")
-             (.append (custom-halfday-printer)))))
+             (.append (custom-halfday-printer "a.m." "p.m.")))
+
+      :am/pm #(.append % (custom-halfday-printer "am" "pm"))
+      :a/p #(.append % (custom-halfday-printer "a" "p"))
+      :ampm #(.append % (custom-halfday-printer "a.m." "p.m."))))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
@@ -140,7 +149,11 @@
                           milliseconds-unpadded
 
                           locale-long-time-format
-                          locale-short-time-format))]
+                          locale-short-time-format
+
+                          long-half-day-specifier
+                          short-half-day-specifier
+                          locale-half-day-specifier))]
     (:result (reduce (fn [data raw-value]
                        (let [last-token-was-hour? (or (= (:last-token data) :h) (= (:last-token data) :hh))
                              value (cond (and (= raw-value :m) last-token-was-hour?) :n

@@ -37,7 +37,11 @@
        milliseconds-padded "zzzrest" :zzz "rest"
 
        locale-short-time-format "trest" :t "rest"
-       locale-long-time-format "ttrest" :tt "rest"))
+       locale-long-time-format "ttrest" :tt "rest"
+
+       long-half-day-specifier "am/pmrest" :am/pm "rest"
+       short-half-day-specifier "a/prest" :a/p "rest"
+       locale-half-day-specifier "ampmrest" :ampm "rest"))
 
 (deftest date-format-parsing-tests
   (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
@@ -95,7 +99,11 @@
          :zzz "009"
 
          :t "9:01 a.m."
-         :tt "9:01:05 a.m.")))
+         :tt "9:01:05 a.m."
+
+         :am/pm "am"
+         :a/p "a"
+         :ampm "a.m.")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -109,18 +117,18 @@
         display-offset 0
         display-zone nil
         locale (java.util.Locale/getDefault)
-        printer (custom-halfday-printer)]
-    (is (= 4 (.estimatePrintedLength printer)))
-    (is (= "a.m." (let [buffer (new StringBuffer)]
+        printer (custom-halfday-printer "ante meridiem" "post meridiem")]
+    (is (= 13 (.estimatePrintedLength printer)))
+    (is (= "ante meridiem" (let [buffer (new StringBuffer)]
                     (.printTo printer buffer (.getMillis test-date) chronology display-offset display-zone locale)
                     (str buffer))))
-    (is (= "p.m." (let [writer (new StringWriter)]
+    (is (= "post meridiem" (let [writer (new StringWriter)]
                     (.printTo printer writer (+ (.getMillis test-date) 43200000) chronology display-offset display-zone locale)
                     (str writer))))
-    (is (= "a.m." (let [buffer (new StringBuffer)]
+    (is (= "ante meridiem" (let [buffer (new StringBuffer)]
                     (.printTo printer buffer (.toLocalDateTime test-date) locale)
                     (str buffer))))
-    (is (= "a.m." (let [writer (new StringWriter)]
+    (is (= "ante meridiem" (let [writer (new StringWriter)]
                     (.printTo printer writer (.toLocalDateTime test-date) locale)
                     (str writer))))))
 
