@@ -6,42 +6,40 @@
   (:use clojure.test format-conversion))
 
 (deftest sub-parser-tests
-  (are [sub-parser state expected-result expected-state] (let [[result new-state] (sub-parser {:remainder state})]
-                                                           (and (= expected-result result)
-                                                                (= expected-state (apply str (:remainder new-state)))))
-       day-number-without-leading-zero "drest" :d "rest"
-       day-number-with-leading-zero "ddrest" :dd "rest"
-       abbreviated-day-of-week "dddrest" :ddd "rest"
-       day-of-week "ddddrest" :dddd "rest"
-       locale-short-date-format "dddddrest" :ddddd "rest"
-       locale-long-date-format "ddddddrest" :dddddd "rest"
+  (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
+       day-number-without-leading-zero "d" :d
+       day-number-with-leading-zero "dd" :dd
+       abbreviated-day-of-week "ddd" :ddd
+       day-of-week "dddd" :dddd
+       locale-short-date-format "ddddd" :ddddd
+       locale-long-date-format "dddddd" :dddddd
 
-       month-number-without-leading-zero "mrest" :m "rest"
-       month-number-with-leading-zero "mmrest" :mm "rest"
-       abbreviated-month-name "mmmrest" :mmm "rest"
-       month-name "mmmmrest" :mmmm "rest"
+       month-number-without-leading-zero "m" :m
+       month-number-with-leading-zero "mm" :mm
+       abbreviated-month-name "mmm" :mmm
+       month-name "mmmm" :mmmm
 
-       two-digit-year "yyrest" :yy "rest"
-       four-digit-year "yyyyrest" :yyyy "rest"
+       two-digit-year "yy" :yy
+       four-digit-year "yyyy" :yyyy
 
-       hour-number-without-leading-zero "hrest" :h "rest"
-       hour-number-with-leading-zero "hhrest" :hh "rest"
+       hour-number-without-leading-zero "h" :h
+       hour-number-with-leading-zero "hh" :hh
 
-       minutes-without-leading-zero "nrest" :n "rest"
-       minutes-with-leading-zero "nnrest" :nn "rest"
+       minutes-without-leading-zero "n" :n
+       minutes-with-leading-zero "nn" :nn
 
-       seconds-without-leading-zero "srest" :s "rest"
-       seconds-with-leading-zero "ssrest" :ss "rest"
+       seconds-without-leading-zero "s" :s
+       seconds-with-leading-zero "ss" :ss
 
-       milliseconds-unpadded "zrest" :z "rest"
-       milliseconds-padded "zzzrest" :zzz "rest"
+       milliseconds-unpadded "z" :z
+       milliseconds-padded "zzz" :zzz
 
-       locale-short-time-format "trest" :t "rest"
-       locale-long-time-format "ttrest" :tt "rest"
+       locale-short-time-format "t" :t
+       locale-long-time-format "tt" :tt
 
-       long-half-day-specifier "am/pmrest" :am/pm "rest"
-       short-half-day-specifier "a/prest" :a/p "rest"
-       locale-half-day-specifier "ampmrest" :ampm "rest"))
+       long-half-day-specifier "am/pm" :am/pm
+       short-half-day-specifier "a/p" :a/p
+       locale-half-day-specifier "ampm" :ampm))
 
 (deftest date-format-parsing-tests
   (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
@@ -66,11 +64,13 @@
          [:hh :nn :z :mm] "hhmmzmm")))
 
 (deftest builder-updater-for-token-tests
-  (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
-                                       (time/time-zone-for-id "Pacific/Auckland"))]
-    (are [token expected-pattern] (= expected-pattern (let [builder (new DateTimeFormatterBuilder)]
-                                                        ((builder-updater-for-token token) builder)
-                                                        (time-format/unparse (.toFormatter builder) test-date)))
+  (let [applied-token (fn [token date]
+                        (let [builder (new DateTimeFormatterBuilder)]
+                          ((builder-updater-for-token token) builder)
+                          (time-format/unparse (.toFormatter builder) date)))]
+    (are [token expected-pattern] (= expected-pattern
+                                     (applied-token token (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
+                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
          :d "2"
          :dd "02"
          :ddd "Mon"
@@ -103,7 +103,21 @@
 
          :am/pm "am"
          :a/p "a"
-         :ampm "a.m.")))
+         :ampm "a.m.")
+    (are [token expected-pattern] (= expected-pattern
+                                     (applied-token token (time/from-time-zone (time/date-time 2009 8 2 21 1 5 9)
+                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
+         :yy "09"
+
+         :h "21"
+         :hh "21"
+
+         :t "9:01 p.m."
+         :tt "9:01:05 p.m."
+
+         :am/pm "pm"
+         :a/p "p"
+         :ampm "p.m.")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
