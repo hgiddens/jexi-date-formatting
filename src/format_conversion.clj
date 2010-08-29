@@ -102,7 +102,16 @@
 
                           milliseconds-padded
                           milliseconds-unpadded))]
-    (first (parser {:remainder date-format}))))
+    (:result (reduce (fn [data raw-value]
+                       (let [last-token-was-hour? (or (= (:last-token data) :h) (= (:last-token data) :hh))
+                             value (cond (and (= raw-value :m) last-token-was-hour?) :n
+                                         (and (= raw-value :mm) last-token-was-hour?) :nn
+                                         :otherwise raw-value)]
+                         (assoc data
+                           :result (conj (:result data) value)
+                           :last-token value)))
+                     {:result [], :last-token nil}
+                     (first (parser {:remainder date-format}))))))
 
 (defn create-formatter
   "Creates a DateTimeFormatter with a format as described by tokens."

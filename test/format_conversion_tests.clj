@@ -50,7 +50,11 @@
          [:yyyy] "yyyy"
          [:nn] "nn"
          [:ss] "ss"
-         [:zzz] "zzz")))
+         [:zzz] "zzz"
+         [:h :n :z :m] "hmzm"
+         [:hh :n :z :m] "hhmzm"
+         [:h :nn :z :mm] "hmmzmm"
+         [:hh :nn :z :mm] "hhmmzmm")))
 
 (deftest builder-updater-for-token-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
