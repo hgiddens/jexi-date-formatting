@@ -59,10 +59,9 @@
 (deftest builder-updater-for-token-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
-    (are [token expected-pattern] (let [builder (new DateTimeFormatterBuilder)]
-                                    ((builder-updater-for-token token) builder)
-                                    (let [result (time-format/unparse (.toFormatter builder) test-date)]
-                                      (= expected-pattern result)))
+    (are [token expected-pattern] (= expected-pattern (let [builder (new DateTimeFormatterBuilder)]
+                                                        ((builder-updater-for-token token) builder)
+                                                        (time-format/unparse (.toFormatter builder) test-date)))
          :d "2"
          :dd "02"
          :ddd "Mon"
