@@ -100,13 +100,13 @@
       :zzz #(.appendMillisOfSecond % 3)
 
       :t #(doto %
-            (.appendHourOfHalfday 1)
+            (.appendClockhourOfHalfday 1)
             (.appendLiteral ":")
             (.appendMinuteOfHour 2)
             (.appendLiteral " ")
             (.append (custom-halfday-printer "a.m." "p.m.")))
       :tt #(doto %
-             (.appendHourOfHalfday 1)
+             (.appendClockhourOfHalfday 1)
              (.appendLiteral ":")
              (.appendMinuteOfHour 2)
              (.appendLiteral ":")

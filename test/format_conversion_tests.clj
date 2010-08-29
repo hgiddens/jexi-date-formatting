@@ -117,7 +117,12 @@
 
          :am/pm "pm"
          :a/p "p"
-         :ampm "p.m.")))
+         :ampm "p.m.")
+    (are [token expected-pattern] (= expected-pattern
+                                     (applied-token token (time/from-time-zone (time/date-time 2009 8 2)
+                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
+         :t "12:00 a.m."
+         :tt "12:00:00 a.m.")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
