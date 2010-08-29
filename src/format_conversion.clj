@@ -1,7 +1,9 @@
 (ns format-conversion
-  (:import [org.joda.time.format DateTimeFormatterBuilder])
+  (:import [org.joda.time DateTimeFieldType]
+           [org.joda.time.format DateTimeFormatterBuilder DateTimePrinter])
   (:require [clj-time.core :as time])
-  (:use name.choi.joshua.fnparse))
+  (:use [clojure.contrib.str-utils2 :only [lower-case]]
+        name.choi.joshua.fnparse))
 
 (def day-number-without-leading-zero (constant-semantics (lit \d) :d))
 (def day-number-with-leading-zero (constant-semantics (factor= 2 (lit \d)) :dd))
@@ -29,6 +31,25 @@
 
 (def milliseconds-unpadded (constant-semantics (lit \z) :z))
 (def milliseconds-padded (constant-semantics (factor= 3 (lit \z)) :zzz))
+
+(def locale-short-time-format (constant-semantics (lit \t) :t))
+(def locale-long-time-format (constant-semantics (factor= 2 (lit \t)) :tt))
+
+(defn custom-halfday-printer
+  "Creates a DateTimePrinter that prints the halfday as either 'a.m.' or 'p.m.'."
+  []
+  (let [get-half-day (fn [chronology time locale]
+                       (let [field (.getField (DateTimeFieldType/halfdayOfDay) chronology)
+                             default (.getAsText field time locale)]
+                         (assert (or (= default "AM") (= default "PM")))
+                         (apply str (interleave (lower-case default) (repeat \.)))))]
+    (proxy [DateTimePrinter] []
+      (estimatePrintedLength [] 4)
+      (printTo
+       ([out partial locale]
+          (.append out (get-half-day (.getChronology partial) partial locale)))
+       ([out millis chronology display-offset display-zone locale]
+          (.append out (get-half-day chronology millis locale)))))))
 
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
@@ -71,7 +92,22 @@
       :ss #(.appendSecondOfMinute % 2)
 
       :z #(.appendMillisOfSecond % 1)
-      :zzz #(.appendMillisOfSecond % 3)))
+      :zzz #(.appendMillisOfSecond % 3)
+
+      :t #(doto %
+            (.appendHourOfHalfday 1)
+            (.appendLiteral ":")
+            (.appendMinuteOfHour 2)
+            (.appendLiteral " ")
+            (.append (custom-halfday-printer)))
+      :tt #(doto %
+             (.appendHourOfHalfday 1)
+             (.appendLiteral ":")
+             (.appendMinuteOfHour 2)
+             (.appendLiteral ":")
+             (.appendSecondOfMinute 2)
+             (.appendLiteral " ")
+             (.append (custom-halfday-printer)))))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
@@ -101,7 +137,10 @@
                           seconds-without-leading-zero
 
                           milliseconds-padded
-                          milliseconds-unpadded))]
+                          milliseconds-unpadded
+
+                          locale-long-time-format
+                          locale-short-time-format))]
     (:result (reduce (fn [data raw-value]
                        (let [last-token-was-hour? (or (= (:last-token data) :h) (= (:last-token data) :hh))
                              value (cond (and (= raw-value :m) last-token-was-hour?) :n

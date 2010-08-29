@@ -1,5 +1,6 @@
 (ns format-conversion-tests
-  (:import [org.joda.time.format DateTimeFormatterBuilder])
+  (:import [java.io StringWriter]
+           [org.joda.time.format DateTimeFormatterBuilder])
   (:require [clj-time.core :as time]
             [clj-time.format :as time-format])
   (:use clojure.test format-conversion))
@@ -33,7 +34,10 @@
        seconds-with-leading-zero "ssrest" :ss "rest"
 
        milliseconds-unpadded "zrest" :z "rest"
-       milliseconds-padded "zzzrest" :zzz "rest"))
+       milliseconds-padded "zzzrest" :zzz "rest"
+
+       locale-short-time-format "trest" :t "rest"
+       locale-long-time-format "ttrest" :tt "rest"))
 
 (deftest date-format-parsing-tests
   (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
@@ -51,6 +55,7 @@
          [:nn] "nn"
          [:ss] "ss"
          [:zzz] "zzz"
+         [:tt] "tt"
          [:h :n :z :m] "hmzm"
          [:hh :n :z :m] "hhmzm"
          [:h :nn :z :mm] "hmmzmm"
@@ -87,9 +92,35 @@
          :ss "05"
 
          :z "9"
-         :zzz "009")))
+         :zzz "009"
+
+         :t "9:01 a.m."
+         :tt "9:01:05 a.m.")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
     (is (= "20100802" (time-format/unparse (create-formatter [:yyyy :mm :dd]) test-date)))))
+
+(deftest custom-halfday-printer-tests
+  (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
+                                       (time/time-zone-for-id "Pacific/Auckland"))
+        chronology (.getChronology test-date)
+        display-offset 0
+        display-zone nil
+        locale (java.util.Locale/getDefault)
+        printer (custom-halfday-printer)]
+    (is (= 4 (.estimatePrintedLength printer)))
+    (is (= "a.m." (let [buffer (new StringBuffer)]
+                    (.printTo printer buffer (.getMillis test-date) chronology display-offset display-zone locale)
+                    (str buffer))))
+    (is (= "p.m." (let [writer (new StringWriter)]
+                    (.printTo printer writer (+ (.getMillis test-date) 43200000) chronology display-offset display-zone locale)
+                    (str writer))))
+    (is (= "a.m." (let [buffer (new StringBuffer)]
+                    (.printTo printer buffer (.toLocalDateTime test-date) locale)
+                    (str buffer))))
+    (is (= "a.m." (let [writer (new StringWriter)]
+                    (.printTo printer writer (.toLocalDateTime test-date) locale)
+                    (str writer))))))
+
