@@ -48,9 +48,15 @@
        text-literal "'one\"two'" "one\"two"
        text-literal "\"\"" ""
        text-literal "\"text\"" "text"
-       text-literal "\"one'two\"" "one'two")
+       text-literal "\"one'two\"" "one'two"
+
+       implicit-text-literal ":" ":"
+       implicit-text-literal "/" "/"
+       ;; Catches *all*, including things that would be caught elsewhere.
+       implicit-text-literal "d" "d")
   (is (= ["fo" {:remainder (seq "sho'")}] (text-literal {:remainder "'fo'sho'"})))
-  (is (= ["fo" {:remainder (seq "sho\"")}] (text-literal {:remainder "\"fo\"sho\""}))))
+  (is (= ["fo" {:remainder (seq "sho\"")}] (text-literal {:remainder "\"fo\"sho\""})))
+  (is (= ["1" {:remainder (seq "2")}] (implicit-text-literal {:remainder "12"}))))
 
 (deftest date-format-parsing-tests
   (testing "basic parser behaviour"
@@ -96,7 +102,12 @@
        [:am/pm] "am/pm"
        [:a/p] "a/p"
        [:ampm] "ampm"
-       ["foo"] "'foo'"))
+       ["foo"] "'foo'")
+  (testing "implicit text literals"
+    (are [expected actual] (= expected (parse-date-format actual))
+         [":"] ":"
+         ["/"] "/"
+         ["x"] "x")))
 
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]

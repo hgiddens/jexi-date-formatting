@@ -49,6 +49,8 @@
                                              (apply str contents)))]
                     (alt (delimited-string (lit \')) (delimited-string (lit \")))))
 
+(def implicit-text-literal (semantics anything str))
+
 (defn custom-halfday-printer
   "Creates a DateTimePrinter that prints the halfday using the provided AM/PM strings."
   [am-string pm-string]
@@ -258,7 +260,9 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                           short-half-day-specifier
                           locale-half-day-specifier
 
-                          text-literal))]
+                          text-literal
+                          ;; Implicit text literals must be last.
+                          implicit-text-literal))]
     (-> (first (parser {:remainder date-format}))
         convert-months-to-minutes
         convert-hours-to-clockhours)))
