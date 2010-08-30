@@ -59,21 +59,33 @@
          [:hh :clock-hh :n :am/pm] "hhhhmam/pm"
          [:hh :clock-hh :n :a/p] "hhhhma/p"
          [:hh :clock-hh :n :ampm] "hhhhmampm"))
-  (testing "precedence is correct for potentially ambiguous parses"
-    (are [expected actual] (= expected (parse-date-format actual))
-         [:dddddd] "dddddd"
-         [:ddddd] "ddddd"
-         [:dddd] "dddd"
-         [:ddd] "ddd"
-         [:dd] "dd"
-         [:mmmm] "mmmm"
-         [:mmm] "mmm"
-         [:mm] "mm"
-         [:yyyy] "yyyy"
-         [:nn] "nn"
-         [:ss] "ss"
-         [:zzz] "zzz"
-         [:tt] "tt")))
+  (are [expected actual] (= expected (parse-date-format actual))
+       [:c] "c"
+       [:d] "d"
+       [:dd] "dd"
+       [:ddd] "ddd"
+       [:dddd] "dddd"
+       [:ddddd] "ddddd"
+       [:dddddd] "dddddd"
+       [:m] "m"
+       [:mm] "mm"
+       [:mmm] "mmm"
+       [:mmmm] "mmmm"
+       [:yy] "yy"
+       [:yyyy] "yyyy"
+       [:h] "h"
+       [:hh] "hh"
+       [:n] "n"
+       [:nn] "nn"
+       [:s] "s"
+       [:ss] "ss"
+       [:z] "z"
+       [:zzz] "zzz"
+       [:t] "t"
+       [:tt] "tt"
+       [:am/pm] "am/pm"
+       [:a/p] "a/p"
+       [:ampm] "ampm"))
 
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]
