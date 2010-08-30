@@ -41,7 +41,16 @@
 
        long-half-day-specifier "am/pm" :am/pm
        short-half-day-specifier "a/p" :a/p
-       locale-half-day-specifier "ampm" :ampm))
+       locale-half-day-specifier "ampm" :ampm
+
+       text-literal "''" ""
+       text-literal "'text'" "text"
+       text-literal "'one\"two'" "one\"two"
+       text-literal "\"\"" ""
+       text-literal "\"text\"" "text"
+       text-literal "\"one'two\"" "one'two")
+  (is (= ["fo" {:remainder (seq "sho'")}] (text-literal {:remainder "'fo'sho'"})))
+  (is (= ["fo" {:remainder (seq "sho\"")}] (text-literal {:remainder "\"fo\"sho\""}))))
 
 (deftest date-format-parsing-tests
   (testing "basic parser behaviour"
@@ -52,6 +61,7 @@
          [:hh :n :z :m] "hhmzm"
          [:h :nn :z :mm] "hmmzmm"
          [:hh :nn :z :mm] "hhmmzmm"
+         [:h ":" :n] "h':'m"
 
          [:hh :clock-h :n :am/pm] "hhhmam/pm"
          [:hh :clock-h :n :a/p] "hhhma/p"
@@ -85,7 +95,8 @@
        [:tt] "tt"
        [:am/pm] "am/pm"
        [:a/p] "a/p"
-       [:ampm] "ampm"))
+       [:ampm] "ampm"
+       ["foo"] "'foo'"))
 
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]
@@ -131,7 +142,9 @@
 
          :am/pm "am"
          :a/p "a"
-         :ampm "a.m.")
+         :ampm "a.m."
+
+         "some literal text" "some literal text")
     (are [token expected-pattern] (= expected-pattern
                                      (applied-token token (time/from-time-zone (time/date-time 2009 8 2 21 1 5 9)
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))
@@ -235,7 +248,11 @@
        [:m :h :n :m] [:m :h :m :m]
        [:m :hh :n :m] [:m :hh :m :m]
        [:mm :h :nn :mm] [:mm :h :mm :mm]
-       [:mm :hh :nn :mm] [:mm :hh :mm :mm]))
+       [:mm :hh :nn :mm] [:mm :hh :mm :mm]
+       [:h ":" :n] [:h ":" :m]
+       [:h "some long string" :nn] [:h "some long string" :mm]
+       [:hh :z "some long string" :m] [:hh :z "some long string" :m]
+       [:hh "several" "different" "strings" :nn] [:hh "several" "different" "strings" :mm]))
 
 (deftest convert-hours-to-clockhours-tests
   (are [output input] (= output (convert-hours-to-clockhours input))

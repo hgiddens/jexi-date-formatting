@@ -42,6 +42,13 @@
 (def short-half-day-specifier (constant-semantics (lit-conc-seq "a/p") :a/p))
 (def locale-half-day-specifier (constant-semantics (lit-conc-seq "ampm") :ampm))
 
+(def text-literal (let [delimited-string (fn [delimiter]
+                                           (complex [_ delimiter
+                                                     contents (rep* (except anything delimiter))
+                                                     _ delimiter]
+                                             (apply str contents)))]
+                    (alt (delimited-string (lit \')) (delimited-string (lit \")))))
+
 (defn custom-halfday-printer
   "Creates a DateTimePrinter that prints the halfday using the provided AM/PM strings."
   [am-string pm-string]
@@ -99,74 +106,76 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
   [token]
-  (condp = token
-      :c #(doto %
-            (.appendDayOfMonth 2)
-            (.appendLiteral "/")
-            (.appendMonthOfYear 2)
-            (.appendLiteral "/")
-            (.appendYear 4 4)
-            (.append (optional-time-printer)))
+  (if (string? token)
+    #(.appendLiteral % token)
+    (condp = token
+        :c #(doto %
+              (.appendDayOfMonth 2)
+              (.appendLiteral "/")
+              (.appendMonthOfYear 2)
+              (.appendLiteral "/")
+              (.appendYear 4 4)
+              (.append (optional-time-printer)))
 
-      :d #(.appendDayOfMonth % 1)
-      :dd #(.appendDayOfMonth % 2)
-      :ddd #(.appendDayOfWeekShortText %)
-      :dddd #(.appendDayOfWeekText %)
-      :ddddd #(doto %
-                (.appendDayOfMonth 2)
-                (.appendLiteral "/")
-                (.appendMonthOfYear 2)
-                (.appendLiteral "/")
-                (.appendYear 4 4))
-      :dddddd #(doto %
-                 (.appendDayOfWeekText)
-                 (.appendLiteral ", ")
-                 (.appendDayOfMonth 1)
-                 (.appendLiteral " ")
-                 (.appendMonthOfYearText)
-                 (.appendLiteral " ")
-                 (.appendYear 4 4))
+        :d #(.appendDayOfMonth % 1)
+        :dd #(.appendDayOfMonth % 2)
+        :ddd #(.appendDayOfWeekShortText %)
+        :dddd #(.appendDayOfWeekText %)
+        :ddddd #(doto %
+                  (.appendDayOfMonth 2)
+                  (.appendLiteral "/")
+                  (.appendMonthOfYear 2)
+                  (.appendLiteral "/")
+                  (.appendYear 4 4))
+        :dddddd #(doto %
+                   (.appendDayOfWeekText)
+                   (.appendLiteral ", ")
+                   (.appendDayOfMonth 1)
+                   (.appendLiteral " ")
+                   (.appendMonthOfYearText)
+                   (.appendLiteral " ")
+                   (.appendYear 4 4))
 
-      :m #(.appendMonthOfYear % 1)
-      :mm #(.appendMonthOfYear % 2)
-      :mmm #(.appendMonthOfYearShortText %)
-      :mmmm #(.appendMonthOfYearText %)
+        :m #(.appendMonthOfYear % 1)
+        :mm #(.appendMonthOfYear % 2)
+        :mmm #(.appendMonthOfYearShortText %)
+        :mmmm #(.appendMonthOfYearText %)
 
-      :yy #(.appendTwoDigitYear % (- (time/year (time/now)) 30) false)
-      :yyyy #(.appendYear % 4 4)
+        :yy #(.appendTwoDigitYear % (- (time/year (time/now)) 30) false)
+        :yyyy #(.appendYear % 4 4)
 
-      :h #(.appendHourOfDay % 1)
-      :hh #(.appendHourOfDay % 2)
-      :clock-h #(.appendClockhourOfHalfday % 1)
-      :clock-hh #(.appendClockhourOfHalfday % 2)
+        :h #(.appendHourOfDay % 1)
+        :hh #(.appendHourOfDay % 2)
+        :clock-h #(.appendClockhourOfHalfday % 1)
+        :clock-hh #(.appendClockhourOfHalfday % 2)
 
-      :n #(.appendMinuteOfHour % 1)
-      :nn #(.appendMinuteOfHour % 2)
+        :n #(.appendMinuteOfHour % 1)
+        :nn #(.appendMinuteOfHour % 2)
 
-      :s #(.appendSecondOfMinute % 1)
-      :ss #(.appendSecondOfMinute % 2)
+        :s #(.appendSecondOfMinute % 1)
+        :ss #(.appendSecondOfMinute % 2)
 
-      :z #(.appendMillisOfSecond % 1)
-      :zzz #(.appendMillisOfSecond % 3)
+        :z #(.appendMillisOfSecond % 1)
+        :zzz #(.appendMillisOfSecond % 3)
 
-      :t #(doto %
-            (.appendClockhourOfHalfday 1)
-            (.appendLiteral ":")
-            (.appendMinuteOfHour 2)
-            (.appendLiteral " ")
-            (.append (custom-halfday-printer "a.m." "p.m.")))
-      :tt #(doto %
-             (.appendClockhourOfHalfday 1)
-             (.appendLiteral ":")
-             (.appendMinuteOfHour 2)
-             (.appendLiteral ":")
-             (.appendSecondOfMinute 2)
-             (.appendLiteral " ")
-             (.append (custom-halfday-printer "a.m." "p.m.")))
+        :t #(doto %
+              (.appendClockhourOfHalfday 1)
+              (.appendLiteral ":")
+              (.appendMinuteOfHour 2)
+              (.appendLiteral " ")
+              (.append (custom-halfday-printer "a.m." "p.m.")))
+        :tt #(doto %
+               (.appendClockhourOfHalfday 1)
+               (.appendLiteral ":")
+               (.appendMinuteOfHour 2)
+               (.appendLiteral ":")
+               (.appendSecondOfMinute 2)
+               (.appendLiteral " ")
+               (.append (custom-halfday-printer "a.m." "p.m.")))
 
-      :am/pm #(.append % (custom-halfday-printer "am" "pm"))
-      :a/p #(.append % (custom-halfday-printer "a" "p"))
-      :ampm #(.append % (custom-halfday-printer "a.m." "p.m."))))
+        :am/pm #(.append % (custom-halfday-printer "am" "pm"))
+        :a/p #(.append % (custom-halfday-printer "a" "p"))
+        :ampm #(.append % (custom-halfday-printer "a.m." "p.m.")))))
 
 (defn convert-months-to-minutes
   "Converts month specifiers in tokens to minute specifiers where appropriate."
@@ -176,9 +185,12 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                            value (cond (and (= raw-value :m) last-token-was-hour?) :n
                                        (and (= raw-value :mm) last-token-was-hour?) :nn
                                        :otherwise raw-value)]
-                       (assoc data
-                         :result (conj (:result data) value)
-                         :last-token value)))
+                       (if (string? value)
+                         (assoc data
+                           :result (conj (:result data) value))
+                         (assoc data
+                           :result (conj (:result data) value)
+                           :last-token value))))
                    {:result [], :last-token nil}
                    tokens)))
 
@@ -244,7 +256,9 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
 
                           long-half-day-specifier
                           short-half-day-specifier
-                          locale-half-day-specifier))]
+                          locale-half-day-specifier
+
+                          text-literal))]
     (-> (first (parser {:remainder date-format}))
         convert-months-to-minutes
         convert-hours-to-clockhours)))
