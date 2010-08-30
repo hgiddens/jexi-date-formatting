@@ -44,7 +44,21 @@
        locale-half-day-specifier "ampm" :ampm))
 
 (deftest date-format-parsing-tests
-  (is (= [:dd :mm :yy] (parse-date-format "ddmmyy")))
+  (testing "basic parser behaviour"
+    (are [expected actual] (= expected (parse-date-format actual))
+         [:dd :mm :yy] "ddmmyy"
+
+         [:h :n :z :m] "hmzm"
+         [:hh :n :z :m] "hhmzm"
+         [:h :nn :z :mm] "hmmzmm"
+         [:hh :nn :z :mm] "hhmmzmm"
+
+         [:hh :clock-h :n :am/pm] "hhhmam/pm"
+         [:hh :clock-h :n :a/p] "hhhma/p"
+         [:hh :clock-h :n :ampm] "hhhmampm"
+         [:hh :clock-hh :n :am/pm] "hhhhmam/pm"
+         [:hh :clock-hh :n :a/p] "hhhhma/p"
+         [:hh :clock-hh :n :ampm] "hhhhmampm"))
   (testing "precedence is correct for potentially ambiguous parses"
     (are [expected actual] (= expected (parse-date-format actual))
          [:dddddd] "dddddd"
@@ -59,11 +73,7 @@
          [:nn] "nn"
          [:ss] "ss"
          [:zzz] "zzz"
-         [:tt] "tt"
-         [:h :n :z :m] "hmzm"
-         [:hh :n :z :m] "hhmzm"
-         [:h :nn :z :mm] "hmmzmm"
-         [:hh :nn :z :mm] "hhmmzmm")))
+         [:tt] "tt")))
 
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]
@@ -92,6 +102,8 @@
 
          :h "9"
          :hh "09"
+         :clock-h "9"
+         :clock-hh "09"
 
          :n "1"
          :nn "01"
@@ -115,6 +127,8 @@
 
          :h "21"
          :hh "21"
+         :clock-h "9"
+         :clock-hh "09"
 
          :t "9:01 p.m."
          :tt "9:01:05 p.m."
@@ -204,3 +218,18 @@
                   (.printTo printer buffer (.toLocalDate date) locale)
                   (str buffer)))))))
 
+(deftest convert-months-to-minutes-tests
+  (are [output input] (= output (convert-months-to-minutes input))
+       [:m :h :n :m] [:m :h :m :m]
+       [:m :hh :n :m] [:m :hh :m :m]
+       [:mm :h :nn :mm] [:mm :h :mm :mm]
+       [:mm :hh :nn :mm] [:mm :hh :mm :mm]))
+
+(deftest convert-hours-to-clockhours-tests
+  (are [output input] (= output (convert-hours-to-clockhours input))
+       [:h :clock-h :n :am/pm] [:h :h :n :am/pm]
+       [:h :clock-h :n :a/p] [:h :h :n :a/p]
+       [:h :clock-h :n :ampm] [:h :h :n :ampm]
+       [:hh :clock-hh :n :am/pm] [:hh :hh :n :am/pm]
+       [:hh :clock-hh :n :a/p] [:hh :hh :n :a/p]
+       [:hh :clock-hh :n :ampm] [:hh :hh :n :ampm]))

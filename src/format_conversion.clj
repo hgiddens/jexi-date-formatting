@@ -137,6 +137,8 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
 
       :h #(.appendHourOfDay % 1)
       :hh #(.appendHourOfDay % 2)
+      :clock-h #(.appendClockhourOfHalfday % 1)
+      :clock-hh #(.appendClockhourOfHalfday % 2)
 
       :n #(.appendMinuteOfHour % 1)
       :nn #(.appendMinuteOfHour % 2)
@@ -165,6 +167,45 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
       :am/pm #(.append % (custom-halfday-printer "am" "pm"))
       :a/p #(.append % (custom-halfday-printer "a" "p"))
       :ampm #(.append % (custom-halfday-printer "a.m." "p.m."))))
+
+(defn convert-months-to-minutes
+  "Converts month specifiers in tokens to minute specifiers where appropriate."
+  [tokens]
+  (:result (reduce (fn [data raw-value]
+                     (let [last-token-was-hour? (or (= (:last-token data) :h) (= (:last-token data) :hh))
+                           value (cond (and (= raw-value :m) last-token-was-hour?) :n
+                                       (and (= raw-value :mm) last-token-was-hour?) :nn
+                                       :otherwise raw-value)]
+                       (assoc data
+                         :result (conj (:result data) value)
+                         :last-token value)))
+                   {:result [], :last-token nil}
+                   tokens)))
+
+(defn convert-hours-to-clockhours
+  "Converts hour specifiers in tokens to clock-hour specifiers where appropriate."
+  [tokens]
+  (let [is-halfday-specifier? #{:am/pm :a/p :ampm}
+        is-hour-specifier? #{:h :hh}
+        hour-to-clockhour {:h :clock-h, :hh :clock-hh}]
+    (->> tokens
+         reverse
+         (reduce (fn [data raw-value]
+                   (cond
+                    (and (is-hour-specifier? raw-value) (:unconsumed data))
+                    (assoc data
+                      :result (conj (:result data) (hour-to-clockhour raw-value))
+                      :unconsumed false)
+
+                    (is-halfday-specifier? raw-value)
+                    (assoc data
+                      :result (conj (:result data) raw-value)
+                      :unconsumed true)
+
+                    :otherwise (assoc data :result (conj (:result data) raw-value))))
+                 {:result [], :unconsumed false})
+         :result
+         reverse)))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
@@ -204,16 +245,9 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                           long-half-day-specifier
                           short-half-day-specifier
                           locale-half-day-specifier))]
-    (:result (reduce (fn [data raw-value]
-                       (let [last-token-was-hour? (or (= (:last-token data) :h) (= (:last-token data) :hh))
-                             value (cond (and (= raw-value :m) last-token-was-hour?) :n
-                                         (and (= raw-value :mm) last-token-was-hour?) :nn
-                                         :otherwise raw-value)]
-                         (assoc data
-                           :result (conj (:result data) value)
-                           :last-token value)))
-                     {:result [], :last-token nil}
-                     (first (parser {:remainder date-format}))))))
+    (-> (first (parser {:remainder date-format}))
+        convert-months-to-minutes
+        convert-hours-to-clockhours)))
 
 (defn create-formatter
   "Creates a DateTimeFormatter with a format as described by tokens."
