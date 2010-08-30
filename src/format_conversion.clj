@@ -1,9 +1,12 @@
 (ns format-conversion
-  (:import [org.joda.time DateTimeFieldType]
+  (:import [org.joda.time DateTime DateTimeFieldType]
            [org.joda.time.format DateTimeFormatterBuilder DateTimePrinter])
-  (:require [clj-time.core :as time])
+  (:require [clj-time.core :as time]
+            [clj-time.format :as time-format])
   (:use [clojure.contrib.str-utils2 :only [lower-case]]
         name.choi.joshua.fnparse))
+
+(def locale-date-time (constant-semantics (lit \c) :c))
 
 (def day-number-without-leading-zero (constant-semantics (lit \d) :d))
 (def day-number-with-leading-zero (constant-semantics (factor= 2 (lit \d)) :dd))
@@ -56,10 +59,55 @@
        ([out millis chronology display-offset display-zone locale]
           (.append out (get-half-day chronology millis locale)))))))
 
+(defn optional-time-printer
+  "A DateTimePrinter that prints the time if it is not exactly midnight in the specified zone.
+
+The format used is ' 5:01:02 a.m.'. Note the leading space."
+  []
+  (let [formatter (-> (new DateTimeFormatterBuilder)
+                      (.appendLiteral " ")
+                      (.appendClockhourOfHalfday 1)
+                      (.appendLiteral ":")
+                      (.appendMinuteOfHour 2)
+                      (.appendLiteral ":")
+                      (.appendSecondOfMinute 2)
+                      (.appendLiteral " ")
+                      (.append (custom-halfday-printer "a.m." "p.m."))
+                      .toFormatter)]
+    (proxy [DateTimePrinter] []
+      (estimatePrintedLength [] 14)
+      (printTo
+       ([out partial locale]
+          ;; Unsupported field types are treated as being zero.
+          (let [field-types [(DateTimeFieldType/hourOfDay)
+                             (DateTimeFieldType/minuteOfHour)
+                             (DateTimeFieldType/secondOfMinute)
+                             (DateTimeFieldType/millisOfSecond)]
+                absent? (fn [field-type]
+                          (not (.isSupported partial field-type)))]
+            (when (not-every? (fn [field-type]
+                                (or (absent? field-type) (zero? (.get partial field-type))))
+                              field-types)
+              (.append out (.print formatter partial)))))
+       ([out millis chronology display-offset display-zone locale]
+          ;; This (the (- millis display-offset) part) is complete
+          ;; guesswork, but it seems to do the right thing.
+          (let [date (new DateTime (- millis display-offset) display-zone)]
+            (when (not-every? zero? ((juxt time/hour time/minute time/sec time/milli) date))
+              (.append out (time-format/unparse formatter date)))))))))
+
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
   [token]
   (condp = token
+      :c #(doto %
+            (.appendDayOfMonth 2)
+            (.appendLiteral "/")
+            (.appendMonthOfYear 2)
+            (.appendLiteral "/")
+            (.appendYear 4 4)
+            (.append (optional-time-printer)))
+
       :d #(.appendDayOfMonth % 1)
       :dd #(.appendDayOfMonth % 2)
       :ddd #(.appendDayOfWeekShortText %)
@@ -121,7 +169,9 @@
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
   [date-format]
-  (let [parser (rep* (alt locale-long-date-format
+  (let [parser (rep* (alt locale-date-time
+
+                          locale-long-date-format
                           locale-short-date-format
                           day-of-week
                           abbreviated-day-of-week

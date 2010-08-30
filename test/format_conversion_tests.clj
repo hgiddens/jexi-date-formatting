@@ -7,6 +7,8 @@
 
 (deftest sub-parser-tests
   (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
+       locale-date-time "c" :c
+
        day-number-without-leading-zero "d" :d
        day-number-with-leading-zero "dd" :dd
        abbreviated-day-of-week "ddd" :ddd
@@ -71,6 +73,8 @@
     (are [token expected-pattern] (= expected-pattern
                                      (applied-token token (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))
+         :c "02/08/2010 9:01:05 a.m."
+
          :d "2"
          :dd "02"
          :ddd "Mon"
@@ -121,6 +125,7 @@
     (are [token expected-pattern] (= expected-pattern
                                      (applied-token token (time/from-time-zone (time/date-time 2009 8 2)
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))
+         :c "02/08/2009"
          :t "12:00 a.m."
          :tt "12:00:00 a.m.")))
 
@@ -150,4 +155,52 @@
     (is (= "ante meridiem" (let [writer (new StringWriter)]
                     (.printTo printer writer (.toLocalDateTime test-date) locale)
                     (str writer))))))
+
+(deftest optional-time-printer-tests
+  (testing "when the time should be shown"
+    (let [date (time/from-time-zone (time/date-time 2010 8 2 0 0 0 1)
+                                    (time/time-zone-for-id "Pacific/Auckland"))
+          chronology (.getChronology date)
+          display-offset (* 43200 1000)
+          millis (+ (.getMillis date) display-offset)
+          display-zone (time/time-zone-for-id "Pacific/Auckland")
+          locale nil
+          printer (optional-time-printer)]
+      (is (= 14 (.estimatePrintedLength printer)))
+      (is (= " 12:00:00 a.m." (let [buffer (new StringBuffer)]
+                                (.printTo printer buffer millis chronology display-offset display-zone locale)
+                                (str buffer))))
+      (is (= " 12:00:00 a.m." (let [writer (new StringWriter)]
+                                (.printTo printer writer millis chronology display-offset display-zone locale)
+                                (str writer))))
+      (is (= " 12:00:00 a.m." (let [buffer (new StringBuffer)]
+                                (.printTo printer buffer (.toLocalDateTime date) locale)
+                                (str buffer))))
+      (is (= " 12:00:00 a.m." (let [writer (new StringWriter)]
+                                (.printTo printer writer (.toLocalDateTime date) locale)
+                                (str writer))))))
+  (testing "when the time should be omitted"
+    (let [date (time/from-time-zone (time/date-time 2010 8 2) (time/time-zone-for-id "Pacific/Auckland"))
+          chronology (.getChronology date)
+          display-offset (* 43200 1000)
+          millis (+ (.getMillis date) display-offset)
+          display-zone (time/time-zone-for-id "Pacific/Auckland")
+          locale nil
+          printer (optional-time-printer)]
+      (is (= 14 (.estimatePrintedLength printer)))
+      (is (= "" (let [buffer (new StringBuffer)]
+                  (.printTo printer buffer millis chronology display-offset display-zone locale)
+                  (str buffer))))
+      (is (= "" (let [writer (new StringWriter)]
+                  (.printTo printer writer millis chronology display-offset display-zone locale)
+                  (str writer))))
+      (is (= "" (let [buffer (new StringBuffer)]
+                  (.printTo printer buffer (.toLocalDateTime date) locale)
+                  (str buffer))))
+      (is (= "" (let [writer (new StringWriter)]
+                  (.printTo printer writer (.toLocalDateTime date) locale)
+                  (str writer))))
+      (is (= "" (let [buffer (new StringBuffer)]
+                  (.printTo printer buffer (.toLocalDate date) locale)
+                  (str buffer)))))))
 
