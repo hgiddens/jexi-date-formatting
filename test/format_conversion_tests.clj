@@ -111,7 +111,16 @@
   (is (= ["1" {:remainder (seq "2")}] (implicit-text-literal {:remainder "12"})))
   (let [[result _] (julian-day-number {:remainder "J"})]
     (is (= 'j result))
-    (is (= "J" (:input (meta result))))))
+    (is (= "J" (:input (meta result)))))
+  (let [[result _] (long-half-day-specifier {:remainder "AM/pM"})]
+    (is (= 'am-pm result))
+    (is (= "AM/pM" (:input (meta result)))))
+  (let [[result _] (short-half-day-specifier {:remainder "a/P"})]
+    (is (= 'a-p result))
+    (is (= "a/P" (:input (meta result)))))
+  (let [[result _] (locale-half-day-specifier {:remainder "AmPm"})]
+    (is (= 'ampm result))
+    (is (= "AmPm" (:input (meta result))))))
 
 (deftest date-format-parsing-tests
   (testing "basic parser behaviour"
