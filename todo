@@ -1,0 +1,37 @@
+# -*-org-*-
+
+* TODO We need to ensure that dates/times are displayed in a consistent zone
+  The way to go about doing this is probably to ensure that the formatters
+  we create have had (.withZone pacific/auckland) or what have you called
+  on them. Not sure where I want to put this yet though.
+
+  The following works:
+  (time-format/unparse (.withZone (DateTimeFormat/forPattern "h:mm a")
+                                  (time/time-zone-for-id "Pacific/Auckland"))
+                       (time/now))
+
+* TODO Compatibility notes
+  Known:
+** Locales not used
+   As they're not visible to the client, only their
+   effect on formatting, this shouldn't matter
+** Context sensitivity of m/mm specifier
+   The documentation states that if it immediately follows an h or hh
+   specifier, it represents the minutes of the hour. In common with JEQI,
+   we instead take this to mean “if there are no non-text-literal
+   specifiers between the nearest preceeding h/hh specifier and this
+   specifier, represent minutes, otherwise month.”
+** TODO Seconds specifier
+   We probably go to 60 for leap seconds. Verify.
+** Half-day specifiers
+   The documentation doesn't specify what these display *at* noon. We use
+   the post-noon value.
+** Julian day number
+   In common with JEQI, we use the non-modified Julian day number.
+** Case insensitivity
+   In common with JEQI, half-day specifiers are not case insensitive.
+* TODO Java interface, tests for same, example
+* TODO Taking input as java.util.Date
+* TODO Try to find quirks
+  For instance, we don't handle <DateFormat>'''</DateFormat> the same way
+  as JEQI does.
