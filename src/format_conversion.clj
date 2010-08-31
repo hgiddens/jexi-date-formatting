@@ -1,5 +1,6 @@
 (ns format-conversion
-  (:import [org.joda.time DateTime DateTimeFieldType]
+  (:import [org.joda.time DateTime DateTimeFieldType Days]
+           [org.joda.time.chrono JulianChronology]
            [org.joda.time.format DateTimeFormatterBuilder DateTimePrinter])
   (:require [clj-time.core :as time]
             [clj-time.format :as time-format])
@@ -42,6 +43,8 @@
 (def short-half-day-specifier (constant-semantics (lit-conc-seq "a/p") :a/p))
 (def locale-half-day-specifier (constant-semantics (lit-conc-seq "ampm") :ampm))
 
+(def julian-day-number (constant-semantics (lit \j) :j))
+
 (def text-literal (let [delimited-string (fn [delimiter]
                                            (complex [_ delimiter
                                                      contents (rep* (except anything delimiter))
@@ -67,6 +70,11 @@
           (.append out (get-half-day (.getChronology partial) partial locale)))
        ([out millis chronology display-offset display-zone locale]
           (.append out (get-half-day chronology millis locale)))))))
+
+(defn date-time-from-printer-input
+  "Creates a DateTime instance from the arguments provided to a DateTimePrinter's printTo method."
+  [millis offset zone]
+  (new DateTime (- millis offset) zone))
 
 (defn optional-time-printer
   "A DateTimePrinter that prints the time if it is not exactly midnight in the specified zone.
@@ -101,9 +109,28 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
        ([out millis chronology display-offset display-zone locale]
           ;; This (the (- millis display-offset) part) is complete
           ;; guesswork, but it seems to do the right thing.
-          (let [date (new DateTime (- millis display-offset) display-zone)]
+          (let [date (date-time-from-printer-input millis display-offset display-zone)]
             (when (not-every? zero? ((juxt time/hour time/minute time/sec time/milli) date))
               (.append out (time-format/unparse formatter date)))))))))
+
+(def julian-epoch (new DateTime -4713 1 1 12 0 0 0 (JulianChronology/getInstanceUTC)))
+
+(defn julian-day-number-printer
+  "A DateTimePrinter that prints the Julian day number.
+
+'Iulianum vocavimus: quia ad annum Iulianum dumtaxat accomodata est.'"
+  []
+  (proxy [DateTimePrinter] []
+    (estimatePrintedLength [] 9)
+    (printTo
+     ([out partial locale]
+        (throw (new UnsupportedOperationException "printTo")))
+     ([out millis chronology display-offset display-zone locale]
+        (->> (date-time-from-printer-input millis display-offset display-zone)
+             (Days/daysBetween julian-epoch)
+             .getDays
+             str
+             (.append out))))))
 
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
@@ -177,7 +204,9 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
 
         :am/pm #(.append % (custom-halfday-printer "am" "pm"))
         :a/p #(.append % (custom-halfday-printer "a" "p"))
-        :ampm #(.append % (custom-halfday-printer "a.m." "p.m.")))))
+        :ampm #(.append % (custom-halfday-printer "a.m." "p.m."))
+
+        :j #(.append % (julian-day-number-printer)))))
 
 (defn convert-months-to-minutes
   "Converts month specifiers in tokens to minute specifiers where appropriate."
@@ -221,6 +250,13 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
          :result
          reverse)))
 
+(defn convert-julian-day-number-to-text-literal
+  "Converts Julian day numbers to 'J' text literals, except for when they're the only token."
+  [tokens]
+  (if (= tokens [:j])
+    tokens
+    (map #(if (= % :j) "j" %) tokens)))
+
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
   [date-format]
@@ -260,12 +296,15 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                           short-half-day-specifier
                           locale-half-day-specifier
 
+                          julian-day-number
+
                           text-literal
                           ;; Implicit text literals must be last.
                           implicit-text-literal))]
     (-> (first (parser {:remainder date-format}))
         convert-months-to-minutes
-        convert-hours-to-clockhours)))
+        convert-hours-to-clockhours
+        convert-julian-day-number-to-text-literal)))
 
 (defn create-formatter
   "Creates a DateTimeFormatter with a format as described by tokens."

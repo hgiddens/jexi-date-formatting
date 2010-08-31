@@ -43,6 +43,8 @@
        short-half-day-specifier "a/p" :a/p
        locale-half-day-specifier "ampm" :ampm
 
+       julian-day-number "j" :j
+
        text-literal "''" ""
        text-literal "'text'" "text"
        text-literal "'one\"two'" "one\"two"
@@ -74,7 +76,9 @@
          [:hh :clock-h :n :ampm] "hhhmampm"
          [:hh :clock-hh :n :am/pm] "hhhhmam/pm"
          [:hh :clock-hh :n :a/p] "hhhhma/p"
-         [:hh :clock-hh :n :ampm] "hhhhmampm"))
+         [:hh :clock-hh :n :ampm] "hhhhmampm"
+         [:j] "j"
+         ["j" "j"] "jj"))
   (are [expected actual] (= expected (parse-date-format actual))
        [:c] "c"
        [:d] "d"
@@ -102,6 +106,7 @@
        [:am/pm] "am/pm"
        [:a/p] "a/p"
        [:ampm] "ampm"
+       [:j] "j"
        ["foo"] "'foo'")
   (testing "implicit text literals"
     (are [expected actual] (= expected (parse-date-format actual))
@@ -154,6 +159,8 @@
          :am/pm "am"
          :a/p "a"
          :ampm "a.m."
+
+         :j "2455410"
 
          "some literal text" "some literal text")
     (are [token expected-pattern] (= expected-pattern
@@ -273,3 +280,52 @@
        [:hh :clock-hh :n :am/pm] [:hh :hh :n :am/pm]
        [:hh :clock-hh :n :a/p] [:hh :hh :n :a/p]
        [:hh :clock-hh :n :ampm] [:hh :hh :n :ampm]))
+
+(deftest convert-julian-day-number-to-text-literal-tests
+  (are [output input] (= output (convert-julian-day-number-to-text-literal input))
+       [:j] [:j]
+       ["j" "j"] [:j :j]
+       ["j" " "] [:j " "]))
+
+(deftest julian-day-number-printer-tests
+  (let [zone (time/time-zone-for-id "Pacific/Auckland")
+        previous (time/from-time-zone (time/date-time 2010 8 30 23 59 59 999) zone)
+        date (time/from-time-zone (time/date-time 2010 8 31) zone)
+        chronology (.getChronology date)
+        display-offset (* 43200 1000)
+        millis (+ (.getMillis date) display-offset)
+        locale nil
+        printer (julian-day-number-printer)]
+    (is (= 9 (.estimatePrintedLength printer)))
+    (is (= "2455439" (let [buffer (new StringBuffer)]
+                       (.printTo printer buffer millis chronology display-offset zone locale)
+                       (str buffer))))
+    (is (= "2455439" (let [writer (new StringWriter)]
+                       (.printTo printer writer millis chronology display-offset zone locale)
+                       (str writer))))
+    (is (= "2455438" (let [buffer (new StringBuffer)]
+                       (.printTo printer buffer (+ (.getMillis previous) display-offset) chronology display-offset zone locale)
+                       (str buffer))))
+    (is (thrown? UnsupportedOperationException
+                 (.printTo printer (new StringBuffer) (.toLocalDateTime date) locale)))
+    (is (thrown? UnsupportedOperationException
+                 (.printTo printer (new StringWriter) (.toLocalDateTime date) locale))))
+  (let [zone (time/time-zone-for-id "Europe/Paris")
+        previous (time/from-time-zone (time/date-time 2010 8 30 13 59 59 999) zone)
+        date (time/from-time-zone (time/date-time 2010 8 30 14) zone)
+        chronology (.getChronology date)
+        display-offset (* 2 3600 1000)
+        locale nil
+        printer (julian-day-number-printer)]
+    (is (= "2455438" (let [buffer (new StringBuffer)]
+                       (.printTo printer buffer (+ (.getMillis previous) display-offset) chronology display-offset zone locale)
+                       (str buffer))))
+    (is (= "2455439" (let [buffer (new StringBuffer)]
+                       (.printTo printer buffer (+ (.getMillis date) display-offset) chronology display-offset zone locale)
+                       (str buffer))))))
+
+(deftest date-time-from-printer-input-tests
+  (let [zone (time/time-zone-for-id "Pacific/Auckland")
+        date (time/from-time-zone (time/date-time 2010 8 31 8 56 23) zone)
+        offset (* 12 3600 1000)]
+    (is (= (time/from-time-zone date zone) (date-time-from-printer-input (+ (.getMillis date) offset) offset zone)))))
