@@ -131,6 +131,7 @@
          '[hh clock-hh n a-p] "hhhhma/p"
          '[hh clock-hh n ampm] "hhhhmampm"
          '[j] "j"
+         '["J" "j"] "Jj"
          '["j" "j"] "jj"))
   (are [expected actual] (= expected (parse-date-format actual))
        '[c] "c"
@@ -336,9 +337,9 @@
 
 (deftest convert-julian-day-number-to-text-literal-tests
   (are [output input] (= output (convert-julian-day-number-to-text-literal input))
-       '[j] '[j]
-       '["j" "j"] '[j j]
-       '["j" " "] '[j " "]))
+       '[j] [(with-meta 'j {:input "j"})]
+       '["j" "woohoo"] [(with-meta 'j {:input "j"}), (with-meta 'j {:input "woohoo"})]
+       '["j" " "] [(with-meta 'j {:input "j"}) " "]))
 
 (deftest julian-day-number-printer-tests
   (let [zone (time/time-zone-for-id "Pacific/Auckland")

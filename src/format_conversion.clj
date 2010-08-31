@@ -264,7 +264,7 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
   [tokens]
   (if (= tokens '[j])
     tokens
-    (map #(if (= % 'j) "j" %) tokens)))
+    (map #(if (= % 'j) (:input (meta %)) %) tokens)))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
