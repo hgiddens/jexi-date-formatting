@@ -52,7 +52,7 @@
                                                          (alt (lit \P) (lit \p))
                                                          (alt (lit \M) (lit \m))) 'ampm))
 
-(def julian-day-number (constant-semantics (alt (lit \J) (lit \j)) 'j))
+(def julian-day-number (semantics (alt (lit \J) (lit \j)) #(with-meta 'j {:input (str %)})))
 
 (def text-literal (let [delimited-string (fn [delimiter]
                                            (complex [_ delimiter

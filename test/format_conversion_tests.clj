@@ -108,7 +108,10 @@
        implicit-text-literal "d" "d")
   (is (= ["fo" {:remainder (seq "sho'")}] (text-literal {:remainder "'fo'sho'"})))
   (is (= ["fo" {:remainder (seq "sho\"")}] (text-literal {:remainder "\"fo\"sho\""})))
-  (is (= ["1" {:remainder (seq "2")}] (implicit-text-literal {:remainder "12"}))))
+  (is (= ["1" {:remainder (seq "2")}] (implicit-text-literal {:remainder "12"})))
+  (let [[result _] (julian-day-number {:remainder "J"})]
+    (is (= 'j result))
+    (is (= "J" (:input (meta result))))))
 
 (deftest date-format-parsing-tests
   (testing "basic parser behaviour"
