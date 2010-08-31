@@ -7,42 +7,92 @@
 
 (deftest sub-parser-tests
   (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
+       locale-date-time "C" :c
        locale-date-time "c" :c
 
+       day-number-without-leading-zero "D" :d
        day-number-without-leading-zero "d" :d
+       day-number-with-leading-zero "DD" :dd
+       day-number-with-leading-zero "Dd" :dd
        day-number-with-leading-zero "dd" :dd
+       abbreviated-day-of-week "DDD" :ddd
+       abbreviated-day-of-week "DDd" :ddd
        abbreviated-day-of-week "ddd" :ddd
+       day-of-week "DDDD" :dddd
+       day-of-week "DDdd" :dddd
        day-of-week "dddd" :dddd
+       locale-short-date-format "DDDDD" :ddddd
+       locale-short-date-format "DDDdd" :ddddd
        locale-short-date-format "ddddd" :ddddd
+       locale-long-date-format "DDDDDD" :dddddd
+       locale-long-date-format "DDDddd" :dddddd
        locale-long-date-format "dddddd" :dddddd
 
        month-number-without-leading-zero "m" :m
+       month-number-without-leading-zero "M" :m
+       month-number-with-leading-zero "MM" :mm
+       month-number-with-leading-zero "Mm" :mm
        month-number-with-leading-zero "mm" :mm
+       abbreviated-month-name "MMM" :mmm
+       abbreviated-month-name "MMm" :mmm
        abbreviated-month-name "mmm" :mmm
+       month-name "MMMM" :mmmm
+       month-name "MMmm" :mmmm
        month-name "mmmm" :mmmm
 
+       two-digit-year "YY" :yy
+       two-digit-year "Yy" :yy
        two-digit-year "yy" :yy
+       four-digit-year "YYYY" :yyyy
+       four-digit-year "YYyy" :yyyy
        four-digit-year "yyyy" :yyyy
 
+       hour-number-without-leading-zero "H" :h
        hour-number-without-leading-zero "h" :h
+       hour-number-with-leading-zero "HH" :hh
+       hour-number-with-leading-zero "Hh" :hh
        hour-number-with-leading-zero "hh" :hh
 
+       minutes-without-leading-zero "N" :n
        minutes-without-leading-zero "n" :n
+       minutes-with-leading-zero "NN" :nn
+       minutes-with-leading-zero "Nn" :nn
        minutes-with-leading-zero "nn" :nn
 
+       seconds-without-leading-zero "S" :s
        seconds-without-leading-zero "s" :s
+       seconds-with-leading-zero "SS" :ss
+       seconds-with-leading-zero "Ss" :ss
        seconds-with-leading-zero "ss" :ss
 
+       milliseconds-unpadded "Z" :z
        milliseconds-unpadded "z" :z
+       milliseconds-padded "ZZZ" :zzz
+       milliseconds-padded "ZZz" :zzz
        milliseconds-padded "zzz" :zzz
 
+       locale-short-time-format "T" :t
        locale-short-time-format "t" :t
+       locale-long-time-format "TT" :tt
+       locale-long-time-format "Tt" :tt
        locale-long-time-format "tt" :tt
 
+       long-half-day-specifier "AM/pm" :am/pm
+       long-half-day-specifier "Am/pm" :am/pm
        long-half-day-specifier "am/pm" :am/pm
+       long-half-day-specifier "am/Pm" :am/pm
+       long-half-day-specifier "am/PM" :am/pm
+       short-half-day-specifier "A/p" :a/p
        short-half-day-specifier "a/p" :a/p
+       short-half-day-specifier "a/P" :a/p
+       short-half-day-specifier "a/p" :a/p
+       locale-half-day-specifier "AMpm" :ampm
+       locale-half-day-specifier "Ampm" :ampm
        locale-half-day-specifier "ampm" :ampm
+       locale-half-day-specifier "amPm" :ampm
+       locale-half-day-specifier "amPM" :ampm
 
+       julian-day-number "J" :j
        julian-day-number "j" :j
 
        text-literal "''" ""

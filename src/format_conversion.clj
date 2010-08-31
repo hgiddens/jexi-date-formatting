@@ -7,43 +7,52 @@
   (:use [clojure.contrib.str-utils2 :only [lower-case]]
         name.choi.joshua.fnparse))
 
-(def locale-date-time (constant-semantics (lit \c) :c))
+(def locale-date-time (constant-semantics (alt (lit \C) (lit \c)) :c))
 
-(def day-number-without-leading-zero (constant-semantics (lit \d) :d))
-(def day-number-with-leading-zero (constant-semantics (factor= 2 (lit \d)) :dd))
-(def abbreviated-day-of-week (constant-semantics (factor= 3 (lit \d)) :ddd))
-(def day-of-week (constant-semantics (factor= 4 (lit \d)) :dddd))
-(def locale-short-date-format (constant-semantics (factor= 5 (lit \d)) :ddddd))
-(def locale-long-date-format (constant-semantics (factor= 6 (lit \d)) :dddddd))
+(def day-number-without-leading-zero (constant-semantics (alt (lit \D) (lit \d)) :d))
+(def day-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \D) (lit \d))) :dd))
+(def abbreviated-day-of-week (constant-semantics (factor= 3 (alt (lit \D) (lit \d))) :ddd))
+(def day-of-week (constant-semantics (factor= 4 (alt (lit \D) (lit \d))) :dddd))
+(def locale-short-date-format (constant-semantics (factor= 5 (alt (lit \D) (lit \d))) :ddddd))
+(def locale-long-date-format (constant-semantics (factor= 6 (alt (lit \D) (lit \d))) :dddddd))
 
-(def month-number-without-leading-zero (constant-semantics (lit \m) :m))
-(def month-number-with-leading-zero (constant-semantics (factor= 2 (lit \m)) :mm))
-(def abbreviated-month-name (constant-semantics (factor= 3 (lit \m)) :mmm))
-(def month-name (constant-semantics (factor= 4 (lit \m)) :mmmm))
+(def month-number-without-leading-zero (constant-semantics (alt (lit \M) (lit \m)) :m))
+(def month-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \M) (lit \m))) :mm))
+(def abbreviated-month-name (constant-semantics (factor= 3 (alt (lit \M) (lit \m))) :mmm))
+(def month-name (constant-semantics (factor= 4 (alt (lit \M) (lit \m))) :mmmm))
 
-(def two-digit-year (constant-semantics (factor= 2 (lit \y)) :yy))
-(def four-digit-year (constant-semantics (factor= 4 (lit \y)) :yyyy))
+(def two-digit-year (constant-semantics (factor= 2 (alt (lit \Y) (lit \y))) :yy))
+(def four-digit-year (constant-semantics (factor= 4 (alt (lit \Y) (lit \y))) :yyyy))
 
-(def hour-number-without-leading-zero (constant-semantics (lit \h) :h))
-(def hour-number-with-leading-zero (constant-semantics (factor= 2 (lit \h)) :hh))
+(def hour-number-without-leading-zero (constant-semantics (alt (lit \H) (lit \h)) :h))
+(def hour-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \H) (lit \h))) :hh))
 
-(def minutes-without-leading-zero (constant-semantics (lit \n) :n))
-(def minutes-with-leading-zero (constant-semantics (factor= 2 (lit \n)) :nn))
+(def minutes-without-leading-zero (constant-semantics (alt (lit \N) (lit \n)) :n))
+(def minutes-with-leading-zero (constant-semantics (factor= 2 (alt (lit \N) (lit \n))) :nn))
 
-(def seconds-without-leading-zero (constant-semantics (lit \s) :s))
-(def seconds-with-leading-zero (constant-semantics (factor= 2 (lit \s)) :ss))
+(def seconds-without-leading-zero (constant-semantics (alt (lit \S) (lit \s)) :s))
+(def seconds-with-leading-zero (constant-semantics (factor= 2 (alt (lit \S) (lit \s))) :ss))
 
-(def milliseconds-unpadded (constant-semantics (lit \z) :z))
-(def milliseconds-padded (constant-semantics (factor= 3 (lit \z)) :zzz))
+(def milliseconds-unpadded (constant-semantics (alt (lit \Z) (lit \z)) :z))
+(def milliseconds-padded (constant-semantics (factor= 3 (alt (lit \Z) (lit \z))) :zzz))
 
-(def locale-short-time-format (constant-semantics (lit \t) :t))
-(def locale-long-time-format (constant-semantics (factor= 2 (lit \t)) :tt))
+(def locale-short-time-format (constant-semantics (alt (lit \T) (lit \t)) :t))
+(def locale-long-time-format (constant-semantics (factor= 2 (alt (lit \T) (lit \t))) :tt))
 
-(def long-half-day-specifier (constant-semantics (lit-conc-seq "am/pm") :am/pm))
-(def short-half-day-specifier (constant-semantics (lit-conc-seq "a/p") :a/p))
-(def locale-half-day-specifier (constant-semantics (lit-conc-seq "ampm") :ampm))
+(def long-half-day-specifier (constant-semantics (conc (alt (lit \A) (lit \a))
+                                                       (alt (lit \M) (lit \m))
+                                                       (lit \/)
+                                                       (alt (lit \P) (lit \p))
+                                                       (alt (lit \M) (lit \m))) :am/pm))
+(def short-half-day-specifier (constant-semantics (conc (alt (lit \A) (lit \a))
+                                                        (lit \/)
+                                                        (alt (lit \P) (lit \p))) :a/p))
+(def locale-half-day-specifier (constant-semantics (conc (alt (lit \A) (lit \a))
+                                                         (alt (lit \M) (lit \m))
+                                                         (alt (lit \P) (lit \p))
+                                                         (alt (lit \M) (lit \m))) :ampm))
 
-(def julian-day-number (constant-semantics (lit \j) :j))
+(def julian-day-number (constant-semantics (alt (lit \J) (lit \j)) :j))
 
 (def text-literal (let [delimited-string (fn [delimiter]
                                            (complex [_ delimiter
