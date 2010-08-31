@@ -219,9 +219,16 @@
          't "9:01 a.m."
          'tt "9:01:05 a.m."
 
-         'am-pm "am"
-         'a-p "a"
-         'ampm "a.m."
+         (with-meta 'am-pm {:input "AM/pm"}) "AM"
+         (with-meta 'am-pm {:input "Am/pm"}) "Am"
+         (with-meta 'am-pm {:input "aM/pm"}) "aM"
+         (with-meta 'am-pm {:input "am/pm"}) "am"
+         (with-meta 'a-p {:input "A/p"}) "A"
+         (with-meta 'a-p {:input "a/p"}) "a"
+         (with-meta 'ampm {:input "AMpm"}) "A.M."
+         (with-meta 'ampm {:input "Ampm"}) "A.m."
+         (with-meta 'ampm {:input "aMpm"}) "a.M."
+         (with-meta 'ampm {:input "ampm"}) "a.m."
 
          'j "2455410"
 
@@ -239,9 +246,16 @@
          't "9:01 p.m."
          'tt "9:01:05 p.m."
 
-         'am-pm "pm"
-         'a-p "p"
-         'ampm "p.m.")
+         (with-meta 'am-pm {:input "am/PM"}) "PM"
+         (with-meta 'am-pm {:input "am/Pm"}) "Pm"
+         (with-meta 'am-pm {:input "am/pM"}) "pM"
+         (with-meta 'am-pm {:input "am/pm"}) "pm"
+         (with-meta 'a-p {:input "a/P"}) "P"
+         (with-meta 'a-p {:input "a/p"}) "p"
+         (with-meta 'ampm {:input "amPM"}) "P.M."
+         (with-meta 'ampm {:input "amPm"}) "P.m."
+         (with-meta 'ampm {:input "ampM"}) "p.M."
+         (with-meta 'ampm {:input "ampm"}) "p.m.")
     (are [token expected-pattern] (= expected-pattern
                                      (applied-token token (time/from-time-zone (time/date-time 2009 8 2)
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))

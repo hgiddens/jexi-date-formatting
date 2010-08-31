@@ -214,9 +214,13 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                (.appendLiteral " ")
                (.append (custom-halfday-printer "a.m." "p.m.")))
 
-        'am-pm #(.append % (custom-halfday-printer "am" "pm"))
-        'a-p #(.append % (custom-halfday-printer "a" "p"))
-        'ampm #(.append % (custom-halfday-printer "a.m." "p.m."))
+        'am-pm #(.append % (let [original (:input (meta token))]
+                             (custom-halfday-printer (subs original 0 2) (subs original 3))) )
+        'a-p #(.append % (let [original (:input (meta token))]
+                           (custom-halfday-printer (str (nth original 0)) (str (nth original 2)))))
+        'ampm #(.append % (let [original (:input (meta token))]
+                            (custom-halfday-printer (str (nth original 0) \. (nth original 1) \.)
+                                                    (str (nth original 2) \. (nth original 3) \.))))
 
         'j #(.append % (julian-day-number-printer)))))
 
