@@ -1,4 +1,4 @@
-# jezebel
+# jexi-date-formatting
 
 FIXME: write description
 
