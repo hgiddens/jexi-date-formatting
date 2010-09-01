@@ -63,6 +63,11 @@
                                                      _ delimiter]
                                              (apply str contents)))]
                     (alt (delimited-string (lit \')) (delimited-string (lit \")))))
+(def unterminated-text-literal (let [unterminated-string (fn [delimiter]
+                                                           (complex [_ delimiter
+                                                                     contents (rep* anything)]
+                                                             (apply str contents)))]
+                                 (alt (unterminated-string (lit \')) (unterminated-string (lit \")))))
 
 (def implicit-text-literal (semantics anything str))
 
@@ -315,6 +320,7 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                           julian-day-number
 
                           text-literal
+                          unterminated-text-literal
                           ;; Implicit text literals must be last.
                           implicit-text-literal))]
     (-> (first (parser {:remainder date-format}))

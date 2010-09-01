@@ -101,6 +101,8 @@
        text-literal "\"\"" ""
        text-literal "\"text\"" "text"
        text-literal "\"one'two\"" "one'two"
+       unterminated-text-literal "'foo" "foo"
+       unterminated-text-literal "\"bar" "bar"
 
        implicit-text-literal ":" ":"
        implicit-text-literal "/" "/"
@@ -170,12 +172,14 @@
        '[a-p] "a/p"
        '[ampm] "ampm"
        '[j] "j"
-       '["foo"] "'foo'")
+       '["foo"] "'foo'"
+       '["bar"] "'bar")
   (testing "implicit text literals"
     (are [expected actual] (= expected (parse-date-format actual))
          [":"] ":"
          ["/"] "/"
-         ["x"] "x")))
+         ["x"] "x"))
+  (is (= '[d "o" n "t do this"] (parse-date-format "don't do this")) "Unterminated text literals"))
 
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]
