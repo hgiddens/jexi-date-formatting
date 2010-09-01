@@ -1,6 +1,6 @@
 # -*-org-*-
 
-* TODO We need to ensure that dates/times are displayed in a consistent zone
+* DONE We need to ensure that dates/times are displayed in a consistent zone
   The way to go about doing this is probably to ensure that the formatters
   we create have had (.withZone pacific/auckland) or what have you called
   on them. Not sure where I want to put this yet though.

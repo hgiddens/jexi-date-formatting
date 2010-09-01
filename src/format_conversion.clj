@@ -329,10 +329,14 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
         convert-julian-day-number-to-text-literal)))
 
 (defn create-formatter
-  "Creates a DateTimeFormatter with a format as described by tokens."
+  "Creates a DateTimeFormatter with a format as described by tokens.
+
+The returned formatter will display times as in the Pacific/Auckland time zone."
   [tokens]
-  (.toFormatter (reduce (fn [builder action]
-                          (doto builder
-                            action))
-                        (new DateTimeFormatterBuilder)
-                        (map builder-updater-for-token tokens))))
+  (-> (reduce (fn [builder action]
+                (doto builder
+                  action))
+              (new DateTimeFormatterBuilder)
+              (map builder-updater-for-token tokens))
+      .toFormatter
+      (.withZone (time/time-zone-for-id "Pacific/Auckland"))))

@@ -274,7 +274,11 @@
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                        (time/time-zone-for-id "Pacific/Auckland"))]
-    (is (= "20100802" (time-format/unparse (create-formatter '[yyyy mm dd]) test-date)))))
+    (is (= "20100802" (time-format/unparse (create-formatter '[yyyy mm dd]) test-date)))
+    (is (= "9:01:05 a.m. Monday, 2 August 2010" (time-format/unparse (create-formatter '[tt " " dddddd]) test-date)))
+    (is (= "9:01:05 a.m. Monday, 2 August 2010"
+           (time-format/unparse (create-formatter '[tt " " dddddd])
+                                (time/to-time-zone test-date (time/time-zone-for-id "Europe/Paris")))))))
 
 (deftest custom-halfday-printer-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
