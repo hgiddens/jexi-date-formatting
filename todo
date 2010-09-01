@@ -30,8 +30,8 @@
    In common with JEQI, we use the non-modified Julian day number.
 ** Case insensitivity
    In common with JEQI, half-day specifiers are not case insensitive.
-* TODO Java interface, tests for same, example
-* TODO Taking input as java.util.Date
+* DONE Java interface, tests for same, example
+* DONE Taking input as java.util.Date
 * DONE Try to find quirks
   For instance, we don't handle <DateFormat>'''</DateFormat> the same way
   as JEQI does.
