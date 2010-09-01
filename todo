@@ -21,8 +21,8 @@
    we instead take this to mean “if there are no non-text-literal
    specifiers between the nearest preceeding h/hh specifier and this
    specifier, represent minutes, otherwise month.”
-** TODO Seconds specifier
-   We probably go to 60 for leap seconds. Verify.
+** Seconds specifiers
+   We don't handle leap seconds.
 ** Half-day specifiers
    The documentation doesn't specify what these display *at* noon. We use
    the post-noon value.

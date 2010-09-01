@@ -261,7 +261,11 @@
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))
          'c "02/08/2009"
          't "12:00 a.m."
-         'tt "12:00:00 a.m.")))
+         'tt "12:00:00 a.m.")
+    (is (= "00" (applied-token 'ss (-> (time/date-time 2008 12 31 23 59 59)
+                                       (.plusSeconds 1)
+                                       (time/to-time-zone (time/time-zone-for-id "Pacific/Auckland")))))
+        "Ensure leap seconds *aren't* handled.")))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
