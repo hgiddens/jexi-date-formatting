@@ -1,5 +1,6 @@
 pom-generated.xml
 Manifest.txt
-jexi-date-formatting.jar
+jexi-date-formatting*.jar
 lib
 classes
+.DS_Store
