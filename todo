@@ -10,7 +10,7 @@
                                   (time/time-zone-for-id "Pacific/Auckland"))
                        (time/now))
 
-* TODO Compatibility notes
+* DONE Compatibility notes
   Known:
 ** Locales not used
    As they're not visible to the client, only their
