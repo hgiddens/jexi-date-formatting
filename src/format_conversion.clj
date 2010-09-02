@@ -172,28 +172,38 @@ literalisation (when the token is not used as a Julian day number)."
 
         'j #(.append % (julian-day-number-printer)))))
 
+(defn apply-parser
+  "Applies parser to the input.
+
+Raises an AssertionError if the input doesn't match exactly."
+  [parser input & state]
+  (let [fail (fn [& args] (assert false))]
+    (rule-match parser fail fail (apply assoc {} :remainder input state))))
+
 (defn convert-months-to-minutes
   "Converts month specifiers in tokens to minute specifiers where appropriate."
   [tokens]
-  (first (let [to-minutes '{m n, mm nn}
-               hour (invisi-conc (lit-alt-seq '[h hh]) (set-info :hour? true))
-               minute (complex [token (lit-alt-seq '[m mm])
-                                hour? (get-info :hour?)
-                                _ (set-info :hour? false)]
-                        (if hour? (to-minutes token) token))
-               string (term string?)
-               specifier (invisi-conc anything (set-info :hour? false))]
-           ((rep* (alt hour minute string specifier)) {:remainder tokens, :hour? false}))))
+  (apply-parser (let [to-minutes '{m n, mm nn}
+                      hour (invisi-conc (lit-alt-seq '[h hh]) (set-info :hour? true))
+                      minute (complex [token (lit-alt-seq '[m mm])
+                                       hour? (get-info :hour?)
+                                       _ (set-info :hour? false)]
+                               (if hour? (to-minutes token) token))
+                      string (term string?)
+                      specifier (invisi-conc anything (set-info :hour? false))]
+                  (rep* (alt hour minute string specifier)))
+                tokens :hour? false))
 
 (defn convert-hours-to-clockhours
   "Converts hour specifiers in tokens to clock-hour specifiers where appropriate."
   [tokens]
-  (first (let [to-clock-hour '{h clock-h, hh clock-hh}
-               half-day-specifier (lit-alt-seq '[am-pm a-p ampm])
-               hour (lit-alt-seq '[h hh])
-               clock-hour (semantics (invisi-conc hour (followed-by (conc (rep* (except anything (alt hour half-day-specifier)))
-                                                                          half-day-specifier))) to-clock-hour)]
-           ((rep* (alt clock-hour anything)) {:remainder tokens}))))
+  (apply-parser (let [to-clock-hour '{h clock-h, hh clock-hh}
+                      half-day-specifier (lit-alt-seq '[am-pm a-p ampm])
+                      hour (lit-alt-seq '[h hh])
+                      trailing-half-day (conc (rep* (except anything (alt hour half-day-specifier))) half-day-specifier)
+                      clock-hour (semantics (invisi-conc hour (followed-by trailing-half-day)) to-clock-hour)]
+                  (rep* (alt clock-hour anything)))
+                tokens))
 
 (defn convert-julian-day-number-to-text-literal
   "Converts Julian day numbers to 'J' text literals, except for when they're the only token."
@@ -244,7 +254,7 @@ literalisation (when the token is not used as a Julian day number)."
                           unterminated-text-literal
                           ;; Implicit text literals must be last.
                           implicit-text-literal))]
-    (-> (first (parser {:remainder date-format}))
+    (-> (apply-parser parser date-format)
         flatten
         convert-months-to-minutes
         convert-hours-to-clockhours

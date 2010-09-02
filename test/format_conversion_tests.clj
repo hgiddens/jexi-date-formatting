@@ -2,7 +2,8 @@
   (:import [java.io StringWriter]
            [org.joda.time.format DateTimeFormatterBuilder])
   (:require [clj-time.core :as time]
-            [clj-time.format :as time-format])
+            [clj-time.format :as time-format]
+            [name.choi.joshua.fnparse :as fnparse])
   (:use clojure.test format-conversion))
 
 (defn local-time [& args]
@@ -397,3 +398,13 @@
 (deftest date-time-from-printer-input-tests
   (let [date (local-time 2010 8 31 8 56 23), offset (* 12 3600 1000)]
     (is (= date (date-time-from-printer-input (+ (.getMillis date) offset) offset (.getZone date))))))
+
+(deftest apply-parser-tests
+  (let [parser (fnparse/lit-conc-seq [:a :b])]
+    (is (= [:a :b] (apply-parser parser [:a :b])))
+    (is (thrown? AssertionError (apply-parser parser [:a])))
+    (is (thrown? AssertionError (apply-parser parser [:a :b :c]))))
+  (let [parser (fnparse/complex [token fnparse/anything
+                                 mapping (fnparse/get-info :mapping)]
+                 (mapping token token))]
+    (is (= [1 2] (apply-parser (fnparse/rep* parser) [:one :two] :mapping {:one 1, :two 2})))))
