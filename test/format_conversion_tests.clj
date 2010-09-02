@@ -184,6 +184,11 @@
          ["x"] "x"))
   (is (= '[d "o" n "t do this"] (parse-date-format "don't do this")) "Unterminated text literals"))
 
+(deftest input-for-token-tests
+  (is (= "bar" (input-for-token (with-meta 'foo {:input "bar"}))))
+  (binding [*assert* false]
+    (is (thrown? AssertionError (input-for-token 'foo)))))
+
 (deftest builder-updater-for-token-tests
   (let [applied-token (fn [token date]
                         (let [builder (new DateTimeFormatterBuilder)]
@@ -236,7 +241,6 @@
          (with-meta 'ampm {:input "Ampm"}) "A.m."
          (with-meta 'ampm {:input "aMpm"}) "a.M."
          (with-meta 'ampm {:input "ampm"}) "a.m."
-
          'j "2455410"
 
          "some literal text" "some literal text")
@@ -272,7 +276,10 @@
     (is (= "00" (applied-token 'ss (-> (time/date-time 2008 12 31 23 59 59)
                                        (.plusSeconds 1)
                                        (time/to-time-zone (time/time-zone-for-id "Pacific/Auckland")))))
-        "Ensure leap seconds *aren't* handled.")))
+        "Ensure leap seconds *aren't* handled.")
+    (is (thrown? AssertionError (applied-token 'am-pm (time/now))))
+    (is (thrown? AssertionError (applied-token 'a-p (time/now))))
+    (is (thrown? AssertionError (applied-token 'ampm (time/now))))))
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
@@ -374,7 +381,9 @@
        '[hh clock-hh n ampm] '[hh hh n ampm]))
 
 (deftest convert-julian-day-number-to-text-literal-tests
+  (is (thrown? AssertionError (dorun (convert-julian-day-number-to-text-literal '[j " "]))))
   (are [output input] (= output (convert-julian-day-number-to-text-literal input))
+       '[j] '[j]
        '[j] [(with-meta 'j {:input "j"})]
        '["j" "woohoo"] [(with-meta 'j {:input "j"}), (with-meta 'j {:input "woohoo"})]
        '["j" " "] [(with-meta 'j {:input "j"}) " "]))

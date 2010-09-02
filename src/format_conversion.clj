@@ -141,6 +141,17 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
              str
              (.append out))))))
 
+(defn input-for-token
+  "Returns the input that generated token.
+
+Used by the half-day specifiers to calculate the case of their output, and
+by the Julian day number specifier to find the case of its
+literalisation (when the token is not used as a Julian day number)."
+  [token]
+  (let [m (:input (meta token))]
+    (assert (not (nil? m)))
+    m))
+
 (defn builder-updater-for-token
   "Converts a format token to a function that updates a DateTimeFormatterBuilder."
   [token]
@@ -211,11 +222,11 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
                (.appendLiteral " ")
                (.append (custom-halfday-printer "a.m." "p.m.")))
 
-        'am-pm #(.append % (let [original (:input (meta token))]
+        'am-pm #(.append % (let [original (input-for-token token)]
                              (custom-halfday-printer (subs original 0 2) (subs original 3))) )
-        'a-p #(.append % (let [original (:input (meta token))]
+        'a-p #(.append % (let [original (input-for-token token)]
                            (custom-halfday-printer (str (nth original 0)) (str (nth original 2)))))
-        'ampm #(.append % (let [original (:input (meta token))]
+        'ampm #(.append % (let [original (input-for-token token)]
                             (custom-halfday-printer (str (nth original 0) \. (nth original 1) \.)
                                                     (str (nth original 2) \. (nth original 3) \.))))
 
@@ -268,7 +279,7 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
   [tokens]
   (if (= tokens '[j])
     tokens
-    (map #(if (= % 'j) (:input (meta %)) %) tokens)))
+    (map #(if (= % 'j) (input-for-token %) %) tokens)))
 
 (defn parse-date-format
   "Converts the string date-format to a list of date format tokens."
