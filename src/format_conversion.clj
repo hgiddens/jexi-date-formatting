@@ -8,6 +8,8 @@
         [clojure.contrib.str-utils2 :only [lower-case]]
         name.choi.joshua.fnparse))
 
+(declare create-formatter)
+
 (defmacro simple-sub-parser [match-string result]
   `(semantics (conc ~@(map (fn [character]
                              `(alt (lit ~(Character/toUpperCase character))
@@ -86,23 +88,12 @@
 
 The format used is ' 5:01:02 a.m.'. Note the leading space."
   []
-  (let [formatter (-> (new DateTimeFormatterBuilder)
-                      (.appendLiteral " ")
-                      (.appendClockhourOfHalfday 1)
-                      (.appendLiteral ":")
-                      (.appendMinuteOfHour 2)
-                      (.appendLiteral ":")
-                      (.appendSecondOfMinute 2)
-                      (.appendLiteral " ")
-                      (.append (custom-halfday-printer "a.m." "p.m."))
-                      .toFormatter)]
+  (let [formatter (create-formatter '[" " clock-h ":" nn ":" ss " " #^{:input "ampm"} ampm])]
     (proxy [DateTimePrinter] []
       (estimatePrintedLength [] 14)
       (printTo
        ([out partial locale] (throw (new UnsupportedOperationException "printTo")))
        ([out millis chronology display-offset display-zone locale]
-          ;; This (the (- millis display-offset) part) is complete
-          ;; guesswork, but it seems to do the right thing.
           (let [date (date-time-from-printer-input millis display-offset display-zone)]
             (when (not-every? zero? ((juxt time/hour time/minute time/sec time/milli) date))
               (.append out (time-format/unparse formatter date)))))))))
