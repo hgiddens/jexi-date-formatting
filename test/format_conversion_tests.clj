@@ -10,8 +10,8 @@
 
 (deftest sub-parser-tests
   (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
-       locale-date-time "C" 'c
-       locale-date-time "c" 'c
+       locale-date-time "C" '[dd "/" mm "/" yyyy optional-time]
+       locale-date-time "c" '[dd "/" mm "/" yyyy optional-time]
 
        day-number-without-leading-zero "D" 'd
        day-number-without-leading-zero "d" 'd
@@ -24,12 +24,12 @@
        day-of-week "DDDD" 'dddd
        day-of-week "DDdd" 'dddd
        day-of-week "dddd" 'dddd
-       locale-short-date-format "DDDDD" 'ddddd
-       locale-short-date-format "DDDdd" 'ddddd
-       locale-short-date-format "ddddd" 'ddddd
-       locale-long-date-format "DDDDDD" 'dddddd
-       locale-long-date-format "DDDddd" 'dddddd
-       locale-long-date-format "dddddd" 'dddddd
+       locale-short-date-format "DDDDD" '[dd "/" mm "/" yyyy]
+       locale-short-date-format "DDDdd" '[dd "/" mm "/" yyyy]
+       locale-short-date-format "ddddd" '[dd "/" mm "/" yyyy]
+       locale-long-date-format "DDDDDD" '[dddd ", " d " " mmmm " " yyyy]
+       locale-long-date-format "DDDddd" '[dddd ", " d " " mmmm " " yyyy]
+       locale-long-date-format "dddddd" '[dddd ", " d " " mmmm " " yyyy]
 
        month-number-without-leading-zero "m" 'm
        month-number-without-leading-zero "M" 'm
@@ -74,11 +74,11 @@
        milliseconds-padded "ZZz" 'zzz
        milliseconds-padded "zzz" 'zzz
 
-       locale-short-time-format "T" 't
-       locale-short-time-format "t" 't
-       locale-long-time-format "TT" 'tt
-       locale-long-time-format "Tt" 'tt
-       locale-long-time-format "tt" 'tt
+       locale-short-time-format "T" '[clock-h ":" nn " " ampm]
+       locale-short-time-format "t" '[clock-h ":" nn " " ampm]
+       locale-long-time-format "TT" '[clock-h ":" nn ":" ss " " ampm]
+       locale-long-time-format "Tt" '[clock-h ":" nn ":" ss " " ampm]
+       locale-long-time-format "tt" '[clock-h ":" nn ":" ss " " ampm]
 
        long-half-day-specifier "AM/pm" 'am-pm
        long-half-day-specifier "Am/pm" 'am-pm
@@ -148,13 +148,13 @@
          '["J" "j"] "Jj"
          '["j" "j"] "jj"))
   (are [expected actual] (= expected (parse-date-format actual))
-       '[c] "c"
+       '[dd "/" mm "/" yyyy optional-time] "c"
        '[d] "d"
        '[dd] "dd"
        '[ddd] "ddd"
        '[dddd] "dddd"
-       '[ddddd] "ddddd"
-       '[dddddd] "dddddd"
+       '[dd "/" mm "/" yyyy] "ddddd"
+       '[dddd ", " d " " mmmm " " yyyy] "dddddd"
        '[m] "m"
        '[mm] "mm"
        '[mmm] "mmm"
@@ -169,8 +169,8 @@
        '[ss] "ss"
        '[z] "z"
        '[zzz] "zzz"
-       '[t] "t"
-       '[tt] "tt"
+       '[clock-h ":" nn " " ampm] "t"
+       '[clock-h ":" nn ":" ss " " ampm] "tt"
        '[am-pm] "am/pm"
        '[a-p] "a/p"
        '[ampm] "ampm"
@@ -197,14 +197,12 @@
     (are [token expected-pattern] (= expected-pattern
                                      (applied-token token (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
                                                                                (time/time-zone-for-id "Pacific/Auckland"))))
-         'c "02/08/2010 9:01:05 a.m."
+         'optional-time " 9:01:05 a.m."
 
          'd "2"
          'dd "02"
          'ddd "Mon"
          'dddd "Monday"
-         'ddddd "02/08/2010"
-         'dddddd "Monday, 2 August 2010"
 
          'm "8"
          'mm "08"
@@ -227,9 +225,6 @@
 
          'z "9"
          'zzz "009"
-
-         't "9:01 a.m."
-         'tt "9:01:05 a.m."
 
          (with-meta 'am-pm {:input "AM/pm"}) "AM"
          (with-meta 'am-pm {:input "Am/pm"}) "Am"
@@ -254,9 +249,6 @@
          'clock-h "9"
          'clock-hh "09"
 
-         't "9:01 p.m."
-         'tt "9:01:05 p.m."
-
          (with-meta 'am-pm {:input "am/PM"}) "PM"
          (with-meta 'am-pm {:input "am/Pm"}) "Pm"
          (with-meta 'am-pm {:input "am/pM"}) "pM"
@@ -267,12 +259,8 @@
          (with-meta 'ampm {:input "amPm"}) "P.m."
          (with-meta 'ampm {:input "ampM"}) "p.M."
          (with-meta 'ampm {:input "ampm"}) "p.m.")
-    (are [token expected-pattern] (= expected-pattern
-                                     (applied-token token (time/from-time-zone (time/date-time 2009 8 2)
-                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
-         'c "02/08/2009"
-         't "12:00 a.m."
-         'tt "12:00:00 a.m.")
+    (is (= "" (applied-token 'optional-time (time/from-time-zone (time/date-time 2009 8 2)
+                                                                 (time/time-zone-for-id "Pacific/Auckland")))))
     (is (= "00" (applied-token 'ss (-> (time/date-time 2008 12 31 23 59 59)
                                        (.plusSeconds 1)
                                        (time/to-time-zone (time/time-zone-for-id "Pacific/Auckland")))))
@@ -283,11 +271,12 @@
 
 (deftest formatter-creation-tests
   (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
-                                       (time/time-zone-for-id "Pacific/Auckland"))]
+                                       (time/time-zone-for-id "Pacific/Auckland"))
+        format '[clock-h ":" nn ":" ss " " #^{:input "ampm"} ampm " " dddd ", " d " " mmmm " " yyyy]]
     (is (= "20100802" (time-format/unparse (create-formatter '[yyyy mm dd]) test-date)))
-    (is (= "9:01:05 a.m. Monday, 2 August 2010" (time-format/unparse (create-formatter '[tt " " dddddd]) test-date)))
+    (is (= "9:01:05 a.m. Monday, 2 August 2010" (time-format/unparse (create-formatter format) test-date)))
     (is (= "9:01:05 a.m. Monday, 2 August 2010"
-           (time-format/unparse (create-formatter '[tt " " dddddd])
+           (time-format/unparse (create-formatter format)
                                 (time/to-time-zone test-date (time/time-zone-for-id "Europe/Paris")))))))
 
 (deftest custom-halfday-printer-tests

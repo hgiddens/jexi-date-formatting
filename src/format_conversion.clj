@@ -4,7 +4,8 @@
            [org.joda.time.format DateTimeFormatterBuilder DateTimePrinter])
   (:require [clj-time.core :as time]
             [clj-time.format :as time-format])
-  (:use [clojure.contrib.str-utils2 :only [lower-case]]
+  (:use [clojure.contrib.seq-utils :only [flatten]]
+        [clojure.contrib.str-utils2 :only [lower-case]]
         name.choi.joshua.fnparse))
 
 (defmacro simple-sub-parser [match-string result]
@@ -14,14 +15,14 @@
                            match-string))
               (fn [parse#] (with-meta '~result {:input (apply str parse#)}))))
 
-(def locale-date-time (simple-sub-parser "c" c))
+(def locale-date-time (simple-sub-parser "c" [dd "/" mm "/" yyyy optional-time]))
 
 (def day-number-without-leading-zero (simple-sub-parser "d" d))
 (def day-number-with-leading-zero (simple-sub-parser "dd" dd))
 (def abbreviated-day-of-week (simple-sub-parser "ddd" ddd))
 (def day-of-week (simple-sub-parser "dddd" dddd))
-(def locale-short-date-format (simple-sub-parser "ddddd" ddddd))
-(def locale-long-date-format (simple-sub-parser "dddddd" dddddd))
+(def locale-short-date-format (simple-sub-parser "ddddd" [dd "/" mm "/" yyyy]))
+(def locale-long-date-format (simple-sub-parser "dddddd" [dddd ", " d " " mmmm " " yyyy]))
 
 (def month-number-without-leading-zero (simple-sub-parser "m" m))
 (def month-number-with-leading-zero (simple-sub-parser "mm" mm))
@@ -40,8 +41,8 @@
 (def milliseconds-unpadded (simple-sub-parser "z" z))
 (def milliseconds-padded (simple-sub-parser "zzz" zzz))
 
-(def locale-short-time-format (simple-sub-parser "t" t))
-(def locale-long-time-format (simple-sub-parser "tt" tt))
+(def locale-short-time-format (simple-sub-parser "t" [clock-h ":" nn " " #^{:input "ampm"} ampm]))
+(def locale-long-time-format (simple-sub-parser "tt" [clock-h ":" nn ":" ss " " #^{:input "ampm"} ampm]))
 
 (def long-half-day-specifier (simple-sub-parser "am/pm" am-pm))
 (def short-half-day-specifier (simple-sub-parser "a/p" a-p))
@@ -158,32 +159,12 @@ literalisation (when the token is not used as a Julian day number)."
   (if (string? token)
     #(.appendLiteral % token)
     (condp = token
-        'c #(doto %
-              (.appendDayOfMonth 2)
-              (.appendLiteral "/")
-              (.appendMonthOfYear 2)
-              (.appendLiteral "/")
-              (.appendYear 4 4)
-              (.append (optional-time-printer)))
+        'optional-time #(.append % (optional-time-printer))
 
         'd #(.appendDayOfMonth % 1)
         'dd #(.appendDayOfMonth % 2)
         'ddd #(.appendDayOfWeekShortText %)
         'dddd #(.appendDayOfWeekText %)
-        'ddddd #(doto %
-                  (.appendDayOfMonth 2)
-                  (.appendLiteral "/")
-                  (.appendMonthOfYear 2)
-                  (.appendLiteral "/")
-                  (.appendYear 4 4))
-        'dddddd #(doto %
-                   (.appendDayOfWeekText)
-                   (.appendLiteral ", ")
-                   (.appendDayOfMonth 1)
-                   (.appendLiteral " ")
-                   (.appendMonthOfYearText)
-                   (.appendLiteral " ")
-                   (.appendYear 4 4))
 
         'm #(.appendMonthOfYear % 1)
         'mm #(.appendMonthOfYear % 2)
@@ -206,21 +187,6 @@ literalisation (when the token is not used as a Julian day number)."
 
         'z #(.appendMillisOfSecond % 1)
         'zzz #(.appendMillisOfSecond % 3)
-
-        't #(doto %
-              (.appendClockhourOfHalfday 1)
-              (.appendLiteral ":")
-              (.appendMinuteOfHour 2)
-              (.appendLiteral " ")
-              (.append (custom-halfday-printer "a.m." "p.m.")))
-        'tt #(doto %
-               (.appendClockhourOfHalfday 1)
-               (.appendLiteral ":")
-               (.appendMinuteOfHour 2)
-               (.appendLiteral ":")
-               (.appendSecondOfMinute 2)
-               (.appendLiteral " ")
-               (.append (custom-halfday-printer "a.m." "p.m.")))
 
         'am-pm #(.append % (let [original (input-for-token token)]
                              (custom-halfday-printer (subs original 0 2) (subs original 3))) )
@@ -324,6 +290,7 @@ literalisation (when the token is not used as a Julian day number)."
                           ;; Implicit text literals must be last.
                           implicit-text-literal))]
     (-> (first (parser {:remainder date-format}))
+        flatten
         convert-months-to-minutes
         convert-hours-to-clockhours
         convert-julian-day-number-to-text-literal)))
