@@ -7,55 +7,47 @@
   (:use [clojure.contrib.str-utils2 :only [lower-case]]
         name.choi.joshua.fnparse))
 
-(def locale-date-time (constant-semantics (alt (lit \C) (lit \c)) 'c))
+(defmacro simple-sub-parser [match-string result]
+  `(semantics (conc ~@(map (fn [character]
+                             `(alt (lit ~(Character/toUpperCase character))
+                                   (lit ~(Character/toLowerCase character))))
+                           match-string))
+              (fn [parse#] (with-meta '~result {:input (apply str parse#)}))))
 
-(def day-number-without-leading-zero (constant-semantics (alt (lit \D) (lit \d)) 'd))
-(def day-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \D) (lit \d))) 'dd))
-(def abbreviated-day-of-week (constant-semantics (factor= 3 (alt (lit \D) (lit \d))) 'ddd))
-(def day-of-week (constant-semantics (factor= 4 (alt (lit \D) (lit \d))) 'dddd))
-(def locale-short-date-format (constant-semantics (factor= 5 (alt (lit \D) (lit \d))) 'ddddd))
-(def locale-long-date-format (constant-semantics (factor= 6 (alt (lit \D) (lit \d))) 'dddddd))
+(def locale-date-time (simple-sub-parser "c" c))
 
-(def month-number-without-leading-zero (constant-semantics (alt (lit \M) (lit \m)) 'm))
-(def month-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \M) (lit \m))) 'mm))
-(def abbreviated-month-name (constant-semantics (factor= 3 (alt (lit \M) (lit \m))) 'mmm))
-(def month-name (constant-semantics (factor= 4 (alt (lit \M) (lit \m))) 'mmmm))
+(def day-number-without-leading-zero (simple-sub-parser "d" d))
+(def day-number-with-leading-zero (simple-sub-parser "dd" dd))
+(def abbreviated-day-of-week (simple-sub-parser "ddd" ddd))
+(def day-of-week (simple-sub-parser "dddd" dddd))
+(def locale-short-date-format (simple-sub-parser "ddddd" ddddd))
+(def locale-long-date-format (simple-sub-parser "dddddd" dddddd))
 
-(def two-digit-year (constant-semantics (factor= 2 (alt (lit \Y) (lit \y))) 'yy))
-(def four-digit-year (constant-semantics (factor= 4 (alt (lit \Y) (lit \y))) 'yyyy))
+(def month-number-without-leading-zero (simple-sub-parser "m" m))
+(def month-number-with-leading-zero (simple-sub-parser "mm" mm))
+(def abbreviated-month-name (simple-sub-parser "mmm" mmm))
+(def month-name (simple-sub-parser "mmmm" mmmm))
 
-(def hour-number-without-leading-zero (constant-semantics (alt (lit \H) (lit \h)) 'h))
-(def hour-number-with-leading-zero (constant-semantics (factor= 2 (alt (lit \H) (lit \h))) 'hh))
+(def two-digit-year (simple-sub-parser "yy" yy))
+(def four-digit-year (simple-sub-parser "yyyy" yyyy))
 
-(def minutes-without-leading-zero (constant-semantics (alt (lit \N) (lit \n)) 'n))
-(def minutes-with-leading-zero (constant-semantics (factor= 2 (alt (lit \N) (lit \n))) 'nn))
+(def hour-number-without-leading-zero (simple-sub-parser "h" h))
+(def hour-number-with-leading-zero (simple-sub-parser "hh" hh))
+(def minutes-without-leading-zero (simple-sub-parser "n" n))
+(def minutes-with-leading-zero (simple-sub-parser "nn" nn))
+(def seconds-without-leading-zero (simple-sub-parser "s" s))
+(def seconds-with-leading-zero (simple-sub-parser "ss" ss))
+(def milliseconds-unpadded (simple-sub-parser "z" z))
+(def milliseconds-padded (simple-sub-parser "zzz" zzz))
 
-(def seconds-without-leading-zero (constant-semantics (alt (lit \S) (lit \s)) 's))
-(def seconds-with-leading-zero (constant-semantics (factor= 2 (alt (lit \S) (lit \s))) 'ss))
+(def locale-short-time-format (simple-sub-parser "t" t))
+(def locale-long-time-format (simple-sub-parser "tt" tt))
 
-(def milliseconds-unpadded (constant-semantics (alt (lit \Z) (lit \z)) 'z))
-(def milliseconds-padded (constant-semantics (factor= 3 (alt (lit \Z) (lit \z))) 'zzz))
+(def long-half-day-specifier (simple-sub-parser "am/pm" am-pm))
+(def short-half-day-specifier (simple-sub-parser "a/p" a-p))
+(def locale-half-day-specifier (simple-sub-parser "ampm" ampm))
 
-(def locale-short-time-format (constant-semantics (alt (lit \T) (lit \t)) 't))
-(def locale-long-time-format (constant-semantics (factor= 2 (alt (lit \T) (lit \t))) 'tt))
-
-(def long-half-day-specifier (semantics (conc (alt (lit \A) (lit \a))
-                                              (alt (lit \M) (lit \m))
-                                              (lit \/)
-                                              (alt (lit \P) (lit \p))
-                                              (alt (lit \M) (lit \m)))
-                                        #(with-meta 'am-pm {:input (apply str %)})))
-(def short-half-day-specifier (semantics (conc (alt (lit \A) (lit \a))
-                                               (lit \/)
-                                               (alt (lit \P) (lit \p)))
-                                         #(with-meta 'a-p {:input (apply str %)})))
-(def locale-half-day-specifier (semantics (conc (alt (lit \A) (lit \a))
-                                                (alt (lit \M) (lit \m))
-                                                (alt (lit \P) (lit \p))
-                                                (alt (lit \M) (lit \m)))
-                                          #(with-meta 'ampm {:input (apply str %)})))
-
-(def julian-day-number (semantics (alt (lit \J) (lit \j)) #(with-meta 'j {:input (str %)})))
+(def julian-day-number (simple-sub-parser "j" j))
 
 (def text-literal (let [delimited-string (fn [delimiter]
                                            (complex [_ delimiter
@@ -300,13 +292,10 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
 
                           hour-number-with-leading-zero
                           hour-number-without-leading-zero
-
                           minutes-with-leading-zero
                           minutes-without-leading-zero
-
                           seconds-with-leading-zero
                           seconds-without-leading-zero
-
                           milliseconds-padded
                           milliseconds-unpadded
 

@@ -5,6 +5,9 @@
             [clj-time.format :as time-format])
   (:use clojure.test format-conversion))
 
+(deftest simple-sub-parser-tests
+  (is (= ['result {:remainder (seq "rest")}] ((simple-sub-parser "content" result) {:remainder "contentrest"}))))
+
 (deftest sub-parser-tests
   (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
        locale-date-time "C" 'c
