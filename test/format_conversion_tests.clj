@@ -5,6 +5,9 @@
             [clj-time.format :as time-format])
   (:use clojure.test format-conversion))
 
+(defn local-time [& args]
+  (time/from-time-zone (apply time/date-time args) (time/time-zone-for-id "Pacific/Auckland")))
+
 (deftest simple-sub-parser-tests
   (is (= ['result {:remainder (seq "rest")}] ((simple-sub-parser "content" result) {:remainder "contentrest"}))))
 
@@ -194,9 +197,7 @@
                         (let [builder (new DateTimeFormatterBuilder)]
                           ((builder-updater-for-token token) builder)
                           (time-format/unparse (.toFormatter builder) date)))]
-    (are [token expected-pattern] (= expected-pattern
-                                     (applied-token token (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
-                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
+    (are [token expected-pattern] (= expected-pattern (applied-token token (local-time 2010 8 2 9 1 5 9)))
          'optional-time " 9:01:05 a.m."
 
          'd "2"
@@ -239,9 +240,7 @@
          'j "2455410"
 
          "some literal text" "some literal text")
-    (are [token expected-pattern] (= expected-pattern
-                                     (applied-token token (time/from-time-zone (time/date-time 2009 8 2 21 1 5 9)
-                                                                               (time/time-zone-for-id "Pacific/Auckland"))))
+    (are [token expected-pattern] (= expected-pattern (applied-token token (local-time 2009 8 2 21 1 5 9)))
          'yy "09"
 
          'h "21"
@@ -259,8 +258,7 @@
          (with-meta 'ampm {:input "amPm"}) "P.m."
          (with-meta 'ampm {:input "ampM"}) "p.M."
          (with-meta 'ampm {:input "ampm"}) "p.m.")
-    (is (= "" (applied-token 'optional-time (time/from-time-zone (time/date-time 2009 8 2)
-                                                                 (time/time-zone-for-id "Pacific/Auckland")))))
+    (is (= "" (applied-token 'optional-time (local-time 2009 8 2))))
     (is (= "00" (applied-token 'ss (-> (time/date-time 2008 12 31 23 59 59)
                                        (.plusSeconds 1)
                                        (time/to-time-zone (time/time-zone-for-id "Pacific/Auckland")))))
@@ -270,8 +268,7 @@
     (is (thrown? AssertionError (applied-token 'ampm (time/now))))))
 
 (deftest formatter-creation-tests
-  (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
-                                       (time/time-zone-for-id "Pacific/Auckland"))
+  (let [test-date (local-time 2010 8 2 9 1 5 9)
         format '[clock-h ":" nn ":" ss " " #^{:input "ampm"} ampm " " dddd ", " d " " mmmm " " yyyy]]
     (is (= "20100802" (time-format/unparse (create-formatter '[yyyy mm dd]) test-date)))
     (is (= "9:01:05 a.m. Monday, 2 August 2010" (time-format/unparse (create-formatter format) test-date)))
@@ -280,8 +277,7 @@
                                 (time/to-time-zone test-date (time/time-zone-for-id "Europe/Paris")))))))
 
 (deftest custom-halfday-printer-tests
-  (let [test-date (time/from-time-zone (time/date-time 2010 8 2 9 1 5 9)
-                                       (time/time-zone-for-id "Pacific/Auckland"))
+  (let [test-date (local-time 2010 8 2 9 1 5 9)
         chronology (.getChronology test-date)
         display-offset 0
         display-zone nil
@@ -299,12 +295,11 @@
 
 (deftest optional-time-printer-tests
   (testing "when the time should be shown"
-    (let [date (time/from-time-zone (time/date-time 2010 8 2 0 0 0 1)
-                                    (time/time-zone-for-id "Pacific/Auckland"))
+    (let [date (local-time 2010 8 2 0 0 0 1)
           chronology (.getChronology date)
           display-offset (* 43200 1000)
           millis (+ (.getMillis date) display-offset)
-          display-zone (time/time-zone-for-id "Pacific/Auckland")
+          display-zone (.getZone date)
           locale nil
           printer (optional-time-printer)]
       (is (= 14 (.estimatePrintedLength printer)))
@@ -317,11 +312,11 @@
       (is (thrown? UnsupportedOperationException (.printTo printer (new StringBuffer) (.toLocalDateTime date) locale)))
       (is (thrown? UnsupportedOperationException (.printTo printer (new StringWriter) (.toLocalDateTime date) locale)))))
   (testing "when the time should be omitted"
-    (let [date (time/from-time-zone (time/date-time 2010 8 2) (time/time-zone-for-id "Pacific/Auckland"))
+    (let [date (local-time 2010 8 2)
           chronology (.getChronology date)
           display-offset (* 43200 1000)
           millis (+ (.getMillis date) display-offset)
-          display-zone (time/time-zone-for-id "Pacific/Auckland")
+          display-zone (.getZone date)
           locale nil
           printer (optional-time-printer)]
       (is (= 14 (.estimatePrintedLength printer)))
@@ -363,9 +358,9 @@
        '["j" " "] [(with-meta 'j {:input "j"}) " "]))
 
 (deftest julian-day-number-printer-tests
-  (let [zone (time/time-zone-for-id "Pacific/Auckland")
-        previous (time/from-time-zone (time/date-time 2010 8 30 23 59 59 999) zone)
-        date (time/from-time-zone (time/date-time 2010 8 31) zone)
+  (let [previous (local-time 2010 8 30 23 59 59 999)
+        zone (.getZone previous)
+        date (local-time 2010 8 31)
         chronology (.getChronology date)
         display-offset (* 43200 1000)
         millis (+ (.getMillis date) display-offset)
@@ -400,7 +395,5 @@
                        (str buffer))))))
 
 (deftest date-time-from-printer-input-tests
-  (let [zone (time/time-zone-for-id "Pacific/Auckland")
-        date (time/from-time-zone (time/date-time 2010 8 31 8 56 23) zone)
-        offset (* 12 3600 1000)]
-    (is (= (time/from-time-zone date zone) (date-time-from-printer-input (+ (.getMillis date) offset) offset zone)))))
+  (let [date (local-time 2010 8 31 8 56 23), offset (* 12 3600 1000)]
+    (is (= date (date-time-from-printer-input (+ (.getMillis date) offset) offset (.getZone date))))))
