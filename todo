@@ -36,3 +36,6 @@
   For instance, we don't handle <DateFormat>'''</DateFormat> the same way
   as JEQI does.
 * TODO Check <DateFormat>h t ampm</DateFormat> is handled the same
+* TODO Add at least one Java-interface level test for every format specifier
+* TODO Make convert-julian-day-number-to-text-literal a fnparse parser
+* TODO Combine the fnparse parsers
