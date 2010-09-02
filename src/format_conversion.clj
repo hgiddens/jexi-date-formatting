@@ -67,19 +67,14 @@
 (defn custom-halfday-printer
   "Creates a DateTimePrinter that prints the halfday using the provided AM/PM strings."
   [am-string pm-string]
-  (let [get-half-day (fn [chronology time locale]
-                       (let [field (.getField (DateTimeFieldType/halfdayOfDay) chronology)
-                             default (.getAsText field time locale)]
-                         (condp = default
-                             "AM" am-string
-                             "PM" pm-string)))]
-    (proxy [DateTimePrinter] []
-      (estimatePrintedLength [] (max (count am-string) (count pm-string)))
-      (printTo
-       ([out partial locale]
-          (.append out (get-half-day (.getChronology partial) partial locale)))
-       ([out millis chronology display-offset display-zone locale]
-          (.append out (get-half-day chronology millis locale)))))))
+  (proxy [DateTimePrinter] []
+    (estimatePrintedLength [] (max (count am-string) (count pm-string)))
+    (printTo
+     ([out partial locale] (throw (new UnsupportedOperationException "printTo")))
+     ([out millis chronology display-offset display-zone locale]
+        (.append out (condp = (.. (DateTimeFieldType/halfdayOfDay) (getField chronology) (getAsText millis locale))
+                         "AM" am-string
+                         "PM" pm-string))))))
 
 (defn date-time-from-printer-input
   "Creates a DateTime instance from the arguments provided to a DateTimePrinter's printTo method."
@@ -104,18 +99,7 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
     (proxy [DateTimePrinter] []
       (estimatePrintedLength [] 14)
       (printTo
-       ([out partial locale]
-          ;; Unsupported field types are treated as being zero.
-          (let [field-types [(DateTimeFieldType/hourOfDay)
-                             (DateTimeFieldType/minuteOfHour)
-                             (DateTimeFieldType/secondOfMinute)
-                             (DateTimeFieldType/millisOfSecond)]
-                absent? (fn [field-type]
-                          (not (.isSupported partial field-type)))]
-            (when (not-every? (fn [field-type]
-                                (or (absent? field-type) (zero? (.get partial field-type))))
-                              field-types)
-              (.append out (.print formatter partial)))))
+       ([out partial locale] (throw (new UnsupportedOperationException "printTo")))
        ([out millis chronology display-offset display-zone locale]
           ;; This (the (- millis display-offset) part) is complete
           ;; guesswork, but it seems to do the right thing.
@@ -133,8 +117,7 @@ The format used is ' 5:01:02 a.m.'. Note the leading space."
   (proxy [DateTimePrinter] []
     (estimatePrintedLength [] 9)
     (printTo
-     ([out partial locale]
-        (throw (new UnsupportedOperationException "printTo")))
+     ([out partial locale] (throw (new UnsupportedOperationException "printTo")))
      ([out millis chronology display-offset display-zone locale]
         (->> (date-time-from-printer-input millis display-offset display-zone)
              (Days/daysBetween julian-epoch)

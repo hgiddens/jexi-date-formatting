@@ -294,12 +294,8 @@
     (is (= "post meridiem" (let [writer (new StringWriter)]
                     (.printTo printer writer (+ (.getMillis test-date) 43200000) chronology display-offset display-zone locale)
                     (str writer))))
-    (is (= "ante meridiem" (let [buffer (new StringBuffer)]
-                    (.printTo printer buffer (.toLocalDateTime test-date) locale)
-                    (str buffer))))
-    (is (= "ante meridiem" (let [writer (new StringWriter)]
-                    (.printTo printer writer (.toLocalDateTime test-date) locale)
-                    (str writer))))))
+    (is (thrown? UnsupportedOperationException (.printTo printer (new StringBuffer) (.toLocalDateTime test-date) locale)))
+    (is (thrown? UnsupportedOperationException (.printTo printer (new StringWriter) (.toLocalDateTime test-date) locale)))))
 
 (deftest optional-time-printer-tests
   (testing "when the time should be shown"
@@ -318,12 +314,8 @@
       (is (= " 12:00:00 a.m." (let [writer (new StringWriter)]
                                 (.printTo printer writer millis chronology display-offset display-zone locale)
                                 (str writer))))
-      (is (= " 12:00:00 a.m." (let [buffer (new StringBuffer)]
-                                (.printTo printer buffer (.toLocalDateTime date) locale)
-                                (str buffer))))
-      (is (= " 12:00:00 a.m." (let [writer (new StringWriter)]
-                                (.printTo printer writer (.toLocalDateTime date) locale)
-                                (str writer))))))
+      (is (thrown? UnsupportedOperationException (.printTo printer (new StringBuffer) (.toLocalDateTime date) locale)))
+      (is (thrown? UnsupportedOperationException (.printTo printer (new StringWriter) (.toLocalDateTime date) locale)))))
   (testing "when the time should be omitted"
     (let [date (time/from-time-zone (time/date-time 2010 8 2) (time/time-zone-for-id "Pacific/Auckland"))
           chronology (.getChronology date)
@@ -339,15 +331,8 @@
       (is (= "" (let [writer (new StringWriter)]
                   (.printTo printer writer millis chronology display-offset display-zone locale)
                   (str writer))))
-      (is (= "" (let [buffer (new StringBuffer)]
-                  (.printTo printer buffer (.toLocalDateTime date) locale)
-                  (str buffer))))
-      (is (= "" (let [writer (new StringWriter)]
-                  (.printTo printer writer (.toLocalDateTime date) locale)
-                  (str writer))))
-      (is (= "" (let [buffer (new StringBuffer)]
-                  (.printTo printer buffer (.toLocalDate date) locale)
-                  (str buffer)))))))
+      (is (thrown? UnsupportedOperationException (.printTo printer (new StringBuffer) (.toLocalDateTime date) locale)))
+      (is (thrown? UnsupportedOperationException (.printTo printer (new StringWriter) (.toLocalDateTime date) locale))))))
 
 (deftest convert-months-to-minutes-tests
   (are [output input] (= output (convert-months-to-minutes input))
