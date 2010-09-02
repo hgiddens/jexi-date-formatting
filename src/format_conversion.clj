@@ -175,44 +175,25 @@ literalisation (when the token is not used as a Julian day number)."
 (defn convert-months-to-minutes
   "Converts month specifiers in tokens to minute specifiers where appropriate."
   [tokens]
-  (:result (reduce (fn [data raw-value]
-                     (let [last-token-was-hour? (or (= (:last-token data) 'h) (= (:last-token data) 'hh))
-                           value (cond (and (= raw-value 'm) last-token-was-hour?) 'n
-                                       (and (= raw-value 'mm) last-token-was-hour?) 'nn
-                                       :otherwise raw-value)]
-                       (if (string? value)
-                         (assoc data
-                           :result (conj (:result data) value))
-                         (assoc data
-                           :result (conj (:result data) value)
-                           :last-token value))))
-                   {:result [], :last-token nil}
-                   tokens)))
+  (first (let [to-minutes '{m n, mm nn}
+               hour (invisi-conc (lit-alt-seq '[h hh]) (set-info :hour? true))
+               minute (complex [token (lit-alt-seq '[m mm])
+                                hour? (get-info :hour?)
+                                _ (set-info :hour? false)]
+                        (if hour? (to-minutes token) token))
+               string (term string?)
+               specifier (invisi-conc anything (set-info :hour? false))]
+           ((rep* (alt hour minute string specifier)) {:remainder tokens, :hour? false}))))
 
 (defn convert-hours-to-clockhours
   "Converts hour specifiers in tokens to clock-hour specifiers where appropriate."
   [tokens]
-  (let [is-halfday-specifier? '#{am-pm a-p ampm}
-        is-hour-specifier? '#{h hh}
-        hour-to-clockhour '{h clock-h, hh clock-hh}]
-    (->> tokens
-         reverse
-         (reduce (fn [data raw-value]
-                   (cond
-                    (and (is-hour-specifier? raw-value) (:unconsumed data))
-                    (assoc data
-                      :result (conj (:result data) (hour-to-clockhour raw-value))
-                      :unconsumed false)
-
-                    (is-halfday-specifier? raw-value)
-                    (assoc data
-                      :result (conj (:result data) raw-value)
-                      :unconsumed true)
-
-                    :otherwise (assoc data :result (conj (:result data) raw-value))))
-                 {:result [], :unconsumed false})
-         :result
-         reverse)))
+  (first (let [to-clock-hour '{h clock-h, hh clock-hh}
+               half-day-specifier (lit-alt-seq '[am-pm a-p ampm])
+               hour (lit-alt-seq '[h hh])
+               clock-hour (semantics (invisi-conc hour (followed-by (conc (rep* (except anything (alt hour half-day-specifier)))
+                                                                          half-day-specifier))) to-clock-hour)]
+           ((rep* (alt clock-hour anything)) {:remainder tokens}))))
 
 (defn convert-julian-day-number-to-text-literal
   "Converts Julian day numbers to 'J' text literals, except for when they're the only token."

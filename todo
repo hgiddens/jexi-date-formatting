@@ -35,3 +35,4 @@
 * DONE Try to find quirks
   For instance, we don't handle <DateFormat>'''</DateFormat> the same way
   as JEQI does.
+* TODO Check <DateFormat>h t ampm</DateFormat> is handled the same
