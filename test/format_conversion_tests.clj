@@ -10,8 +10,8 @@
 
 (deftest sub-parser-tests
   (are [sub-parser state expected-result] (= [expected-result {:remainder nil}] (sub-parser {:remainder state}))
-       locale-date-time "C" '[dd "/" mm "/" yyyy optional-time]
-       locale-date-time "c" '[dd "/" mm "/" yyyy optional-time]
+       locale-date-time "C" '[d "/" mm "/" yyyy optional-time]
+       locale-date-time "c" '[d "/" mm "/" yyyy optional-time]
 
        day-number-without-leading-zero "D" 'd
        day-number-without-leading-zero "d" 'd
@@ -24,9 +24,9 @@
        day-of-week "DDDD" 'dddd
        day-of-week "DDdd" 'dddd
        day-of-week "dddd" 'dddd
-       locale-short-date-format "DDDDD" '[dd "/" mm "/" yyyy]
-       locale-short-date-format "DDDdd" '[dd "/" mm "/" yyyy]
-       locale-short-date-format "ddddd" '[dd "/" mm "/" yyyy]
+       locale-short-date-format "DDDDD" '[d "/" mm "/" yyyy]
+       locale-short-date-format "DDDdd" '[d "/" mm "/" yyyy]
+       locale-short-date-format "ddddd" '[d "/" mm "/" yyyy]
        locale-long-date-format "DDDDDD" '[dddd ", " d " " mmmm " " yyyy]
        locale-long-date-format "DDDddd" '[dddd ", " d " " mmmm " " yyyy]
        locale-long-date-format "dddddd" '[dddd ", " d " " mmmm " " yyyy]
@@ -148,12 +148,12 @@
          '["J" "j"] "Jj"
          '["j" "j"] "jj"))
   (are [expected actual] (= expected (parse-date-format actual))
-       '[dd "/" mm "/" yyyy optional-time] "c"
+       '[d "/" mm "/" yyyy optional-time] "c"
        '[d] "d"
        '[dd] "dd"
        '[ddd] "ddd"
        '[dddd] "dddd"
-       '[dd "/" mm "/" yyyy] "ddddd"
+       '[d "/" mm "/" yyyy] "ddddd"
        '[dddd ", " d " " mmmm " " yyyy] "dddddd"
        '[m] "m"
        '[mm] "mm"

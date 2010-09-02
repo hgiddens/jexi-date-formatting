@@ -17,13 +17,13 @@
                            match-string))
               (fn [parse#] (with-meta '~result {:input (apply str parse#)}))))
 
-(def locale-date-time (simple-sub-parser "c" [dd "/" mm "/" yyyy optional-time]))
+(def locale-date-time (simple-sub-parser "c" [d "/" mm "/" yyyy optional-time]))
 
 (def day-number-without-leading-zero (simple-sub-parser "d" d))
 (def day-number-with-leading-zero (simple-sub-parser "dd" dd))
 (def abbreviated-day-of-week (simple-sub-parser "ddd" ddd))
 (def day-of-week (simple-sub-parser "dddd" dddd))
-(def locale-short-date-format (simple-sub-parser "ddddd" [dd "/" mm "/" yyyy]))
+(def locale-short-date-format (simple-sub-parser "ddddd" [d "/" mm "/" yyyy]))
 (def locale-long-date-format (simple-sub-parser "dddddd" [dddd ", " d " " mmmm " " yyyy]))
 
 (def month-number-without-leading-zero (simple-sub-parser "m" m))
