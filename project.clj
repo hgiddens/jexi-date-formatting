@@ -1,4 +1,4 @@
-(defproject jexi-date-formatting "0.0.1"
+(defproject jexi-date-formatting "1.0.0"
   :description "Format dates according to JEXI date format specifiers"
   :aot [nz.co.robotines.JEXIDateFormatter]
   :dependencies [[org.clojure/clojure "1.1.0"]

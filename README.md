@@ -62,8 +62,8 @@ Use [Leiningen](http://github.com/technomancy/leiningen) to build the jar file:
     $ lein uberjar
 
 The above will create two `.jar` files, one
-(`jexi-date-formatting-x.y.z.jar`) including only the jexi-date-formatting
-files, the other (`jexi-date-formatting-x.y.z-standalone.jar`) also
+(`jexi-date-formatting-1.0.0.jar`) including only the jexi-date-formatting
+files, the other (`jexi-date-formatting-1.0.0-standalone.jar`) also
 including dependencies. Electing not to use the standalone jar will mean
 you will have to supply the dependencies yourself:
 
